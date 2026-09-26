@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Changed `DNS Client` to `Configured DNS Servers` and now shows DNS server addresses per active network adapter.
+- Improved the built-in help and description with a clearer summary of the readiness checks.
+- Updated the script date to 27/09/2026.
 
 All notable changes to CheckServerForExchangeSE.ps1 are documented here.
 
