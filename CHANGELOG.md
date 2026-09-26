@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2 - 27/09/2026
 
 - Changed `DNS Client` to `Configured DNS Servers` and now shows DNS server addresses per active network adapter.
 - Improved the built-in help and description with a clearer summary of the readiness checks.
