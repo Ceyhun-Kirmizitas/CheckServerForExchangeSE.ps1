@@ -11,20 +11,111 @@ The script checks Windows Server readiness before Exchange SE installation and r
 
 ## What it checks
 
-- Windows Server version, edition, architecture, and Windows PowerShell
-- Domain membership, primary DNS suffix, server FQDN, Active Directory site, and functional levels
-- Writable domain controller and Global Catalog availability
-- DNS SRV records and server/DC/GC name resolution
-- Active network adapters, DNS servers, DHCP, IPv4/IPv6 bindings, and IPv6 preference
-- RSS, link speed, MTU, DNS registration, NIC power management, NIC Teaming, and packet discards
-- Windows Time, pending reboot, CPU, memory, page file, and power plan
-- File system, allocation unit size, disk partition style, media type, and bus type
-- Required Windows Features and Exchange prerequisite packages
-- TLS/SCHANNEL configuration
-- Microsoft Defender status and exclusions
-- Previous Exchange Setup log activity
-- Credential Guard, IE Enhanced Security Configuration, regional settings, and time zone
-- Regional and time zone consistency across multiple servers
+### Host and operating system
+
+- Administrator/elevated PowerShell session
+- Windows PowerShell 5.1
+- Supported Windows Server version, edition, installation type, and x64 architecture
+- Member server role instead of Domain Controller
+- Windows Time service and current time source
+- Pending reboot state
+
+### Active Directory and DNS
+
+- Domain membership
+- Primary DNS suffix and server FQDN
+- Active Directory forest functional level
+- Active Directory site detection
+- Writable domain controller and Global Catalog discovery
+- Server FQDN DNS resolution
+- DC Locator SRV records
+- Kerberos SRV records
+- Global Catalog SRV records
+- Writable domain controller DNS resolution
+- Global Catalog DNS resolution
+
+### Network configuration
+
+- DNS client configuration
+- DHCP / stable IPv4 addressing
+- IPv4 binding
+- IPv6 adapter binding
+- IPv4-over-IPv6 preference through `DisabledComponents`
+- Windows LBFO NIC Teaming configuration and members
+
+### Network adapter health
+
+For each active network adapter where supported:
+
+- Adapter description, link speed, and MTU
+- Receive Side Scaling (RSS)
+- RSS processor and receive queue information
+- NIC power-saving configuration
+- DNS registration
+- Packets Received Discarded
+- vmxnet3 awareness when packet discards are detected
+
+### Hardware and performance
+
+- Installed memory
+- CPU sockets and logical processors
+- Exchange page file baseline
+- Windows power plan
+
+### Storage
+
+- System drive free space and file system
+- Physical disk media information where available
+- Non-system fixed-volume file system
+- GPT/MBR partition style
+- Disk and bus information
+- 64 KB allocation unit size on non-system fixed volumes
+
+### Exchange prerequisites
+
+- .NET Framework
+- Required Windows Features
+- Remote Registry service
+- Microsoft Visual C++ 2012 x64
+- Microsoft Visual C++ 2013 x64
+- Microsoft Visual C++ 2015-2022 x64 visibility
+- Unified Communications Managed API 4.0
+- IIS URL Rewrite Module 2
+
+### TLS and security
+
+- TLS 1.2 readiness
+- TLS 1.0, TLS 1.1, and TLS 1.3 visibility
+- Microsoft Defender Antivirus status
+- Microsoft Defender exclusions
+- Antivirus / EDR exclusion review reminder
+- Credential Guard
+- IE Enhanced Security Configuration for Administrators and Users
+
+### Exchange Setup history
+
+- Existing `C:\ExchangeSetupLogs\ExchangeSetup.log`
+- Previous Exchange Setup activity
+- Reference to Microsoft CSS-Exchange SetupLogReviewer for deeper analysis
+
+### Regional settings and time zone
+
+- Country or region
+- Regional format
+- Current system locale
+- Display language
+- Beta: Use Unicode UTF-8 for worldwide language support
+- Time zone
+
+### Multi-server consistency
+
+When two or more servers are checked, the script also compares:
+
+- Country or region
+- Regional format
+- Current system locale
+- Display language
+- Time zone
 
 ## Result types
 
