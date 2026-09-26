@@ -1,26 +1,84 @@
 ﻿<#
 .SYNOPSIS
-Checks if a Windows Server is ready for an Exchange Server Subscription Edition (SE) Mailbox role installation.
+Checks one or more Windows Servers for Exchange Server Subscription Edition (SE) Mailbox role installation readiness.
 
 .DESCRIPTION
-CheckServerForExchangeSE.ps1 is a read-only readiness script.
-It checks the current Windows Server configuration and reports PASS, BLOCKER, REVIEW, and INFO results.
-It does not change Windows or Exchange settings.
+CheckServerForExchangeSE.ps1 is a read-only readiness script for Exchange Server Subscription Edition (SE) Mailbox role installation.
 
-The script checks the main items needed before Exchange SE installation, including:
-- Windows Server and Windows PowerShell
-- Domain, Active Directory, DNS, and forest functional level
+It can check the local server, one remote server, or multiple remote servers in the same run. The script reports PASS, BLOCKER, REVIEW, and INFO results and does not change Windows or Exchange configuration.
+
+The main readiness checks include:
+
+Host and operating system
+- Administrator/elevated session
+- Windows PowerShell 5.1
+- Supported Windows Server version, edition, installation type, and x64 architecture
+- Member server role
+- Windows Time service and time source
+- Pending reboot state
+
+Active Directory and DNS
+- Domain membership
 - Primary DNS suffix and server FQDN
-- Network adapters, IPv4/IPv6, RSS, DNS registration, NIC power saving, NIC Teaming, and packet discards
-- Windows Time, pending reboot, CPU, memory, page file, and storage
-- NTFS/ReFS and 64 KB allocation unit size on non-system fixed volumes
-- .NET Framework, Windows Features, Remote Registry, Visual C++ packages, UCMA 4.0, and IIS URL Rewrite
-- TLS/SCHANNEL settings
-- Microsoft Defender status and exclusions
-- Previous Exchange Setup log detection
-- Credential Guard, power plan, regional settings, time zone, and IE ESC
+- Forest functional level
+- Active Directory site
+- Writable domain controller and Global Catalog discovery
+- Server FQDN resolution
+- DC Locator, Kerberos, and Global Catalog SRV records
+- Writable domain controller and Global Catalog DNS resolution
 
-When two or more servers are checked, results are grouped by check by default. The script also compares regional settings and time zone values between servers.
+Network and network adapters
+- Configured DNS servers per active network adapter
+- DHCP / stable IPv4 addressing
+- IPv4 and IPv6 bindings
+- IPv4-over-IPv6 preference
+- LBFO NIC Teaming
+- Link speed and MTU
+- Receive Side Scaling (RSS)
+- NIC power-saving configuration
+- NIC DNS registration
+- Packets Received Discarded
+- vmxnet3 awareness when packet discards are detected
+
+Hardware, performance, and storage
+- Memory
+- CPU sockets and logical processors
+- Exchange page file baseline
+- Windows power plan
+- System drive free space and file system
+- Physical disk media and bus information where available
+- Non-system fixed-volume file system
+- GPT/MBR partition style
+- 64 KB allocation unit size on non-system fixed volumes
+
+Exchange prerequisites
+- .NET Framework
+- Required Windows Features
+- Remote Registry
+- Microsoft Visual C++ 2012 x64
+- Microsoft Visual C++ 2013 x64
+- Microsoft Visual C++ 2015-2022 x64 visibility
+- Unified Communications Managed API 4.0
+- IIS URL Rewrite Module 2
+
+TLS, security, and Exchange Setup history
+- TLS 1.2 readiness
+- TLS 1.0, TLS 1.1, and TLS 1.3 visibility
+- Microsoft Defender Antivirus status and exclusions
+- Antivirus / EDR exclusion review reminder
+- Credential Guard
+- IE Enhanced Security Configuration
+- Existing Exchange Setup log detection and SetupLogReviewer reference
+
+Regional settings and time zone
+- Country or region
+- Regional format
+- Current system locale
+- Display language
+- Beta: Use Unicode UTF-8 for worldwide language support
+- Time zone
+
+When two or more servers are checked, results are grouped by check by default. The script also compares country or region, regional format, current system locale, display language, and time zone across the checked servers.
 
 Page file guidance is based on installed RAM. The expected Exchange baseline is a fixed page file with minimum and maximum values set to 25% of installed memory.
 
@@ -103,7 +161,7 @@ Check my GitHub page for updates and other useful tools:
 https://github.com/Ceyhun-Kirmizitas
 
 Version : 1.1
-Date    : 26/09/2026
+Date    : 27/09/2026
 Scope   : Exchange Server Subscription Edition Mailbox server readiness check
 Shell   : Windows PowerShell 5.1
 Mode    : Read-only
@@ -261,6 +319,16 @@ COMMON USAGE
 
   Show this help:
     .\CheckServerForExchangeSE.ps1 -Help
+
+WHAT IT CHECKS
+  - Windows Server, Windows PowerShell, time, reboot, CPU, memory, page file, and power plan
+  - Active Directory, DNS, primary DNS suffix, FQDN, AD site, writable DC, and Global Catalog
+  - Network adapters, configured DNS servers, IPv4/IPv6, RSS, NIC power saving, DNS registration, and packet discards
+  - Storage, file system, partition style, bus/media information, and 64 KB allocation unit size
+  - Exchange prerequisites, Windows Features, .NET, Visual C++, UCMA, and IIS URL Rewrite
+  - TLS/SCHANNEL, Microsoft Defender, Credential Guard, IE ESC, and Exchange Setup log history
+  - Regional settings and time zone
+  - Cross-server regional and time zone consistency when multiple servers are checked
 
 RESULTS
   PASS     Ready / expected
