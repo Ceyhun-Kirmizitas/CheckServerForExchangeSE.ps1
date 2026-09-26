@@ -160,7 +160,7 @@ Author  : Ceyhun Kirmizitas
 Check my GitHub page for updates and other useful tools:
 https://github.com/Ceyhun-Kirmizitas
 
-Version : 1.1
+Version : 1.2
 Date    : 27/09/2026
 Scope   : Exchange Server Subscription Edition Mailbox server readiness check
 Shell   : Windows PowerShell 5.1
@@ -207,6 +207,10 @@ Microsoft references used by this script:
 
 Change log
 ----------
+1.2 - 27/09/2026
+- Changed DNS Client output to Configured DNS Servers and now shows DNS server addresses per active network adapter.
+- Improved the built-in help and description with a clearer summary of the readiness checks.
+
 1.1 - 26/09/2026
 - Renamed the script to CheckServerForExchangeSE.ps1. The version is now kept inside the script and in Git history/releases.
 - Improved error handling. If one check fails, it is reported and the remaining checks continue. A critical server data collection failure stops only that server.
@@ -282,7 +286,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $script:ScriptBaseName = [System.IO.Path]::GetFileNameWithoutExtension($PSCommandPath)
 
-$script:ScriptVersion = '1.1'
+$script:ScriptVersion = '1.2'
 
 if ($Help) {
     @"
