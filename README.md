@@ -1,8 +1,9 @@
 # CheckServerForExchangeSE.ps1
 
-Read-only PowerShell readiness check for Exchange Server Subscription Edition (SE) Mailbox role installation.
+Read-only PowerShell readiness check for Exchange Server Subscription Edition (SE) Mailbox role installation.  
+It checks one or more Windows Servers for operating system, Active Directory, DNS, network, storage, prerequisites, security, and other Exchange SE readiness requirements.
 
-The script checks Windows Server readiness before Exchange SE installation and reports **PASS**, **BLOCKER**, **REVIEW**, and **INFO** results. It does not change Windows or Exchange configuration.
+The script reports **PASS**, **BLOCKER**, **REVIEW**, and **INFO** results. It does not change Windows or Exchange configuration.
 
 ## Download
 
