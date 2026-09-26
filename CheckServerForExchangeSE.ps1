@@ -1600,12 +1600,30 @@ function Get-ExchangePreparationChecks {
     }
 
     $dnsServers = @($State.Network | ForEach-Object { $_.DnsServers } | Where-Object { $_ } | Select-Object -Unique)
+    $dnsAdapterDetails = @(
+        $State.Network |
+            Where-Object { (Get-SafeCount @($_.DnsServers)) -gt 0 } |
+            ForEach-Object {
+                $adapterName = if (-not [string]::IsNullOrWhiteSpace([string]$_.Name)) {
+                    [string]$_.Name
+                }
+                elseif (-not [string]::IsNullOrWhiteSpace([string]$_.Description)) {
+                    [string]$_.Description
+                }
+                else {
+                    'Adapter'
+                }
+
+                "{0}: {1}" -f $adapterName,(@($_.DnsServers) -join ', ')
+            }
+    )
+
     $dhcpAdapters = @($State.Network | Where-Object { $_.Dhcp -eq 'Enabled' } | ForEach-Object { $_.Name })
     if ((Get-SafeCount $dnsServers) -gt 0) {
-        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'DNS Client' -Status PASS -Current ($dnsServers -join ', ') -Expected 'Internal AD-capable DNS servers' -Message 'Verify the addresses against the customer AD/DNS design.'))
+        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'Configured DNS Servers' -Status PASS -Current ($dnsAdapterDetails -join ' | ') -Expected 'Internal AD-capable DNS servers' -Message 'Verify the addresses against the customer AD/DNS design.'))
     }
     else {
-        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'DNS Client' -Status BLOCKER -Current '<None>' -Expected 'At least one internal AD DNS server'))
+        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'Configured DNS Servers' -Status BLOCKER -Current '<None configured on active adapters>' -Expected 'At least one internal AD DNS server'))
     }
 
     $lbfoTeams = @($State.NicTeaming.Teams)
