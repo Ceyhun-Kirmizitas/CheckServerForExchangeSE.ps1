@@ -1,196 +1,221 @@
 # ExchangeServerReadinessCheck.ps1
 
-Read-only PowerShell readiness check for Exchange Server Subscription Edition (SE) Mailbox role installation.  
-It checks one or more Windows Servers for operating system, Active Directory, DNS, network, storage, prerequisites, security, and other Exchange SE readiness requirements.
+Read-only, role-aware PowerShell readiness checks for **Exchange Server Subscription Edition (SE)**.
 
-The script reports **PASS**, **BLOCKER**, **REVIEW**, and **INFO** results. It does not change Windows or Exchange configuration.
+The script validates one local server, one remote server, or multiple remote servers before Exchange Setup. It supports the **Mailbox**, **ManagementTools**, and **EdgeTransport** roles and reports findings as **PASS**, **BLOCKER**, **REVIEW**, or **INFO**.
+
+It does not change Windows or Exchange configuration.
 
 ## Download
 
-- [GitHub source](ExchangeServerReadinessCheck.ps1)
-- [GitHub raw download](https://raw.githubusercontent.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/main/ExchangeServerReadinessCheck.ps1)
+- [ExchangeServerReadinessCheck.ps1](ExchangeServerReadinessCheck.ps1)
+- [Raw download](https://raw.githubusercontent.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/main/ExchangeServerReadinessCheck.ps1)
+- [Usage article and screenshots](https://ceyhunkirmizitas.net/exchange-server-se-readiness-check/)
+
+## Roles
+
+### Mailbox
+
+Performs the full Exchange server readiness evaluation and automatically selects the matching Windows Feature baseline for **Server Core** or **Server with Desktop Experience**.
+
+### ManagementTools
+
+Validates the supported **Exchange Management Tools on Windows Server** prerequisite scope. Windows 10/11 Management Tools installations are outside this script's scope.
+
+### EdgeTransport
+
+Uses the Edge Transport prerequisite and readiness scope without Mailbox-only checks.
 
 ## What it checks
 
 ### Host and operating system
 
-- Administrator/elevated PowerShell session
+- Elevated Windows PowerShell session
 - Windows PowerShell 5.1
-- Supported Windows Server version, edition, installation type, and x64 architecture
-- Member server role instead of Domain Controller
-- Windows Time service and current time source
-- Pending reboot state
+- Supported Windows Server version, edition, x64 architecture, and installation type
+- Windows Time service and time source
+- Pending reboot
+- Page file guidance
 
-### Active Directory and DNS
+### Active Directory, DNS, and permissions
 
-- Domain membership
+- Domain membership where applicable
 - Primary DNS suffix and server FQDN
-- Active Directory forest functional level
-- Active Directory site detection
-- Writable domain controller and Global Catalog discovery
-- Server FQDN DNS resolution
-- DC Locator SRV records
-- Kerberos SRV records
-- Global Catalog SRV records
-- Writable domain controller DNS resolution
-- Global Catalog DNS resolution
+- Forest functional level
+- Active Directory site
+- Writable domain controller and Global Catalog
+- Server FQDN and Exchange-related DNS/SRV resolution
+- Current user effective access-token visibility for Exchange Organization Management, Domain Admins, Enterprise Admins, and Schema Admins
+- FSMO role holders and Schema Master site visibility
 
-### Network configuration
+### Network
 
-- DNS client configuration
+- Configured DNS servers per active adapter
 - DHCP / stable IPv4 addressing
-- IPv4 binding
-- IPv6 adapter binding
-- IPv4-over-IPv6 preference through `DisabledComponents`
-- Windows LBFO NIC Teaming configuration and members
-
-### Network adapter health
-
-For each active network adapter where supported:
-
-- Adapter description, link speed, and MTU
+- IPv4 and IPv6 bindings
+- IPv6 `DisabledComponents` policy
+- Link speed and MTU
 - Receive Side Scaling (RSS)
-- RSS processor and receive queue information
 - NIC power-saving configuration
 - DNS registration
-- Packets Received Discarded
-- vmxnet3 awareness when packet discards are detected
+- LBFO NIC Teaming
 
-### Hardware and performance
+### Hardware, performance, and storage
 
 - Installed memory
 - CPU sockets and logical processors
-- Exchange page file baseline
 - Windows power plan
+- System drive information
+- Physical disk media and bus information where available
+- Non-system fixed-volume file system and partition style
+- Allocation unit size visibility
 
-### Storage
+The script does **not** assume every non-system volume is an Exchange data volume. A 64 KB allocation unit is treated as the recommended baseline when the volume will host Exchange database or transaction log files.
 
-- System drive free space and file system
-- Physical disk media information where available
-- Non-system fixed-volume file system
-- GPT/MBR partition style
-- Disk and bus information
-- 64 KB allocation unit size on non-system fixed volumes
+### Role-aware Exchange prerequisites
 
-### Exchange prerequisites
+Depending on the selected role, checks include:
 
 - .NET Framework
 - Required Windows Features
-- Remote Registry service
+- Remote Registry
 - Microsoft Visual C++ 2012 x64
 - Microsoft Visual C++ 2013 x64
 - Microsoft Visual C++ 2015-2022 x64 visibility
 - Unified Communications Managed API 4.0
 - IIS URL Rewrite Module 2
+- Active Directory Lightweight Directory Services (AD LDS)
 
 ### TLS and security
 
 - TLS 1.2 readiness
-- TLS 1.0, TLS 1.1, and TLS 1.3 visibility
-- Microsoft Defender Antivirus status
-- Microsoft Defender exclusions
-- Antivirus / EDR exclusion review reminder
+- .NET Framework 4.x TLS settings
+- TLS 1.0, TLS 1.1, and TLS 1.3 SCHANNEL visibility
+- Microsoft Defender Antivirus status and exclusions
+- Third-party antivirus / EDR exclusion reminder
 - Credential Guard
-- IE Enhanced Security Configuration for Administrators and Users
+- IE Enhanced Security Configuration visibility
 
 ### Exchange Setup history
 
 - Existing `C:\ExchangeSetupLogs\ExchangeSetup.log`
 - Previous Exchange Setup activity
-- Reference to Microsoft CSS-Exchange SetupLogReviewer for deeper analysis
+- Microsoft CSS-Exchange SetupLogReviewer reference
 
-### Regional settings and time zone
-
-- Country or region
-- Regional format
-- Current system locale
-- Display language
-- Beta: Use Unicode UTF-8 for worldwide language support
-- Time zone
-
-### Multi-server consistency
-
-When two or more servers are checked, the script also compares:
+### Regional settings and multi-server consistency
 
 - Country or region
-- Regional format
+- Current user format
 - Current system locale
-- Display language
+- Current user display language
+- Beta UTF-8 setting
 - Time zone
 
-## Result types
+When two or more servers are checked, the script compares selected regional and time zone values across the servers.
 
-- **PASS** - Expected readiness condition is met.
-- **BLOCKER** - Must be fixed before Exchange installation, or does not meet the required deployment baseline.
-- **REVIEW** - Needs review for the environment or does not match the preferred baseline.
-- **INFO** - Information only and does not affect readiness counts.
+## Parameters
 
-## Requirements and behavior
-
-- Windows PowerShell 5.1
-- Administrator permissions
-- PowerShell Remoting / WinRM for remote server checks
-- The script is read-only and does not change Windows or Exchange configuration.
-- When two or more servers are checked, results are grouped by check by default.
-- Use `-Detailed` for server-by-server output.
-- Use `-NoPaging` to disable console paging.
-- Using `-OutputFile` creates a TXT report and disables console paging.
+| Parameter | Description | Notes |
+|---|---|---|
+| `-Role` | Selects the Exchange SE role to validate. | `Mailbox`, `ManagementTools`, or `EdgeTransport`. Mailbox is the default for parameterized/unattended runs. |
+| `-Server` | Checks one or more remote servers. | Uses Windows PowerShell Remoting / WinRM with the current credentials. |
+| `-OutputFile` | Saves results to a TXT report. | Multiple servers are written to one combined report. Also disables console paging. |
+| `-GroupBy` | Groups multi-server results by check. | Already the default when two or more servers are checked. |
+| `-Detailed` | Displays results server by server. | Use when grouped output is not wanted. |
+| `-NoPaging` | Prints console output continuously. | Also disables paging for `-Help`. |
+| `-NonInteractive` | Runs without interactive prompts. | Intended for scheduled tasks, pipelines, and unattended execution. |
+| `-Help` | Displays the built-in usage guide. | Use with `-NoPaging` for continuous output. |
 
 ## Examples
 
-Check the local server:
+Interactive local check:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1
 ```
 
-Check one remote server:
+Mailbox role:
+
+```powershell
+.\ExchangeServerReadinessCheck.ps1 -Role Mailbox
+```
+
+Management Tools:
+
+```powershell
+.\ExchangeServerReadinessCheck.ps1 -Role ManagementTools
+```
+
+Edge Transport:
+
+```powershell
+.\ExchangeServerReadinessCheck.ps1 -Role EdgeTransport
+```
+
+One remote server:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1 -Server EXSE01
 ```
 
-Check multiple servers:
+Multiple servers, grouped by check by default:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02,EXSE03
 ```
 
-Show each server separately:
+Server-by-server output:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed
 ```
 
-Run without console paging:
+Unattended execution:
 
 ```powershell
-.\ExchangeServerReadinessCheck.ps1 -NoPaging
+.\ExchangeServerReadinessCheck.ps1 -NonInteractive
 ```
 
-Save a TXT report:
+Save one combined TXT report:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 ```
 
-Show the built-in usage guide:
+Built-in help:
 
 ```powershell
 .\ExchangeServerReadinessCheck.ps1 -Help
 ```
 
-For full PowerShell help:
+Full PowerShell help:
 
 ```powershell
 Get-Help .\ExchangeServerReadinessCheck.ps1 -Full
 ```
 
+## Result types
+
+- **PASS** - The expected readiness condition is met.
+- **BLOCKER** - Exchange Setup is expected to fail, or the configuration is explicitly unsupported.
+- **REVIEW** - The item needs review because it is a recommendation, preferred deployment baseline, or environment-specific decision.
+- **INFO** - Information only and does not affect readiness counts.
+
+## Behavior
+
+- The script is read-only.
+- Fully interactive execution displays a role selector. Pressing ENTER selects Mailbox.
+- Operational parameters bypass the startup confirmation.
+- If one remote server fails, the script reports the failure and continues with the remaining servers.
+- Two or more servers are grouped by check by default.
+- Use `-Detailed` for server-by-server output.
+- Console output uses paging unless it is disabled with `-NoPaging`, `-NonInteractive`, or `-OutputFile`.
+
 ## Notes
 
-Some checks are based on the deployment baseline used by this script and may be stricter than a Microsoft product support requirement. Review **REVIEW** and **INFO** results in the context of your environment.
+The script is intended as a pre-installation readiness aid and does not replace Microsoft CSS-Exchange HealthChecker.
 
-The script includes selected readiness checks inspired by practical Exchange Server deployment work and Microsoft guidance. It is not intended to replace Microsoft CSS-Exchange HealthChecker.
+Always review the findings against the current Microsoft Exchange Server prerequisites, system requirements, supportability matrix, and your deployment design.
 
 ## Changelog
 
@@ -198,7 +223,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Feedback and issues
 
-For feedback, bugs, and feature requests, please use this repository's [GitHub Issues](https://github.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/issues).
+For bugs, feedback, or feature requests, use [GitHub Issues](https://github.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/issues).
 
 ## License
 

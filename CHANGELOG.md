@@ -1,16 +1,43 @@
 # Changelog
 
+All notable changes to ExchangeServerReadinessCheck.ps1 are documented here.
+
+## 1.3 - 27/09/2026
+
+- Renamed the script to `ExchangeServerReadinessCheck.ps1` to match the broader role-aware readiness scope.
+- Added `-Role` with `Mailbox`, `ManagementTools`, and `EdgeTransport` values.
+- Added interactive role selection; pressing ENTER selects Mailbox.
+- Added role-aware prerequisite evaluation for Mailbox, Management Tools, and Edge Transport.
+- Added Server Core vs Server with Desktop Experience detection and automatic Mailbox prerequisite baseline selection.
+- Added Windows Server Management Tools prerequisite validation.
+- Added Edge Transport prerequisite validation, including AD LDS.
+- Added current-user effective access-token visibility for Exchange Organization Management, Domain Admins, Enterprise Admins, and Schema Admins.
+- Added FSMO role holder and Schema Master site visibility.
+- Added `-NonInteractive` for unattended execution.
+- Operational parameters now bypass the startup confirmation and use Mailbox when `-Role` is omitted.
+- Added paging to built-in `-Help`; use `-Help -NoPaging` for continuous output.
+- Fixed console paging so Q stops the remaining console output immediately.
+- Refined BLOCKER semantics so hard blockers are reserved for unsupported or clearly setup-breaking conditions.
+- Changed regional settings to environment-specific REVIEW results instead of enforcing an en-US baseline.
+- Updated regional check names to distinguish current-user settings from system-wide settings.
+- Refined storage reporting so non-system volumes are not automatically treated as Exchange database/log volumes.
+- Removed Packets Received Discarded readiness evaluation.
+- Updated IPv6 logic so Windows default behavior and `DisabledComponents=0x20` are accepted; disabling or unbinding IPv6 is flagged for review.
+- Added .NET Framework 4.x TLS checks for `SystemDefaultTlsVersions` and `SchUseStrongCrypto`.
+- Improved permission wording to clarify that membership results come from the effective Windows access token.
+- Improved Windows Server release detection using build number, ProductName, InstallationType, and EditionID.
+- Improved Server Core-aware UCMA guidance.
+- Updated role propagation for local, remote, console, and TXT report output.
+
 ## 1.2 - 27/09/2026
 
 - Changed `DNS Client` to `Configured DNS Servers` and now shows DNS server addresses per active network adapter.
 - Improved the built-in help and description with a clearer summary of the readiness checks.
 - Updated the script date to 27/09/2026.
 
-All notable changes to CheckServerForExchangeSE.ps1 are documented here.
-
 ## 1.1 - 26/09/2026
 
-- Renamed the script to CheckServerForExchangeSE.ps1. The version is now kept inside the script and in Git history/releases.
+- Renamed the script to `CheckServerForExchangeSE.ps1`. The version is kept inside the script and in Git history/releases.
 - Improved error handling so one failed check does not stop the remaining checks.
 - Added active NIC checks for RSS, link speed, MTU, DNS registration, power saving, and packet discards.
 - Added vmxnet3 awareness when packet discards are detected.
