@@ -1,4 +1,4 @@
-# CheckServerForExchangeSE.ps1
+# ExchangeServerReadinessCheck.ps1
 
 Read-only PowerShell readiness check for Exchange Server Subscription Edition (SE) Mailbox role installation.  
 It checks one or more Windows Servers for operating system, Active Directory, DNS, network, storage, prerequisites, security, and other Exchange SE readiness requirements.
@@ -7,8 +7,8 @@ The script reports **PASS**, **BLOCKER**, **REVIEW**, and **INFO** results. It d
 
 ## Download
 
-- [GitHub source](CheckServerForExchangeSE.ps1)
-- [GitHub raw download](https://raw.githubusercontent.com/Ceyhun-Kirmizitas/CheckServerForExchangeSE.ps1/main/CheckServerForExchangeSE.ps1)
+- [GitHub source](ExchangeServerReadinessCheck.ps1)
+- [GitHub raw download](https://raw.githubusercontent.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/main/ExchangeServerReadinessCheck.ps1)
 
 ## What it checks
 
@@ -141,49 +141,49 @@ When two or more servers are checked, the script also compares:
 Check the local server:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1
+.\ExchangeServerReadinessCheck.ps1
 ```
 
 Check one remote server:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -Server EXSE01
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01
 ```
 
 Check multiple servers:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02,EXSE03
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02,EXSE03
 ```
 
 Show each server separately:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -Detailed
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed
 ```
 
 Run without console paging:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -NoPaging
+.\ExchangeServerReadinessCheck.ps1 -NoPaging
 ```
 
 Save a TXT report:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 ```
 
 Show the built-in usage guide:
 
 ```powershell
-.\CheckServerForExchangeSE.ps1 -Help
+.\ExchangeServerReadinessCheck.ps1 -Help
 ```
 
 For full PowerShell help:
 
 ```powershell
-Get-Help .\CheckServerForExchangeSE.ps1 -Full
+Get-Help .\ExchangeServerReadinessCheck.ps1 -Full
 ```
 
 ## Notes
@@ -198,7 +198,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Feedback and issues
 
-For feedback, bugs, and feature requests, please use this repository's [GitHub Issues](https://github.com/Ceyhun-Kirmizitas/CheckServerForExchangeSE.ps1/issues).
+For feedback, bugs, and feature requests, please use this repository's [GitHub Issues](https://github.com/Ceyhun-Kirmizitas/ExchangeServerReadinessCheck.ps1/issues).
 
 ## License
 

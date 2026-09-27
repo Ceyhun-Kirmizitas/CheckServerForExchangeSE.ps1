@@ -3,7 +3,7 @@
 Checks one or more Windows Servers for Exchange Server Subscription Edition (SE) Mailbox role installation readiness.
 
 .DESCRIPTION
-CheckServerForExchangeSE.ps1 is a read-only readiness script for Exchange Server Subscription Edition (SE) Mailbox role installation.
+ExchangeServerReadinessCheck.ps1 is a read-only readiness script for Exchange Server Subscription Edition (SE) Mailbox role installation.
 
 It can check the local server, one remote server, or multiple remote servers in the same run. The script reports PASS, BLOCKER, REVIEW, and INFO results and does not change Windows or Exchange configuration.
 
@@ -115,43 +115,43 @@ Disables console paging and prints the results continuously.
 Shows the short usage guide and exits.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1
+.\ExchangeServerReadinessCheck.ps1
 Checks the local server.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -NoPaging
+.\ExchangeServerReadinessCheck.ps1 -NoPaging
 Checks the local server without console paging.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
+.\ExchangeServerReadinessCheck.ps1 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 Checks the local server and saves the results to a TXT file.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01
 Checks one remote server.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02,EXSE03
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02,EXSE03
 Checks multiple remote servers. Results are grouped by check by default.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -GroupBy
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -GroupBy
 Checks multiple servers and shows grouped results.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -Detailed
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed
 Checks multiple servers and shows each server separately.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -Detailed -NoPaging
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed -NoPaging
 Checks multiple servers in detailed view without console paging.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
+.\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 Checks multiple servers and saves one combined TXT report.
 
 .EXAMPLE
-.\CheckServerForExchangeSE.ps1 -Help
+.\ExchangeServerReadinessCheck.ps1 -Help
 Shows the built-in usage guide.
 
 .NOTES
@@ -290,39 +290,39 @@ $script:ScriptVersion = '1.2'
 
 if ($Help) {
     @"
-CheckServerForExchangeSE.ps1
+ExchangeServerReadinessCheck.ps1
 Exchange Server SE readiness check
 
 COMMON USAGE
   Check the local server:
-    .\CheckServerForExchangeSE.ps1
+    .\ExchangeServerReadinessCheck.ps1
 
   Check the local server without paging:
-    .\CheckServerForExchangeSE.ps1 -NoPaging
+    .\ExchangeServerReadinessCheck.ps1 -NoPaging
 
   Check the local server and save a TXT report:
-    .\CheckServerForExchangeSE.ps1 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
+    .\ExchangeServerReadinessCheck.ps1 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 
   Check one remote server:
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01
 
   Check multiple servers (grouped by default):
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02
 
   Show grouped results:
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -GroupBy
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -GroupBy
 
   Show each server separately:
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -Detailed
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed
 
   Show detailed results without paging:
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -Detailed -NoPaging
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -Detailed -NoPaging
 
   Save one combined TXT report:
-    .\CheckServerForExchangeSE.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
+    .\ExchangeServerReadinessCheck.ps1 -Server EXSE01,EXSE02 -OutputFile C:\Temp\ExchangeSE-Readiness.txt
 
   Show this help:
-    .\CheckServerForExchangeSE.ps1 -Help
+    .\ExchangeServerReadinessCheck.ps1 -Help
 
 WHAT IT CHECKS
   - Windows Server, Windows PowerShell, time, reboot, CPU, memory, page file, and power plan
@@ -347,7 +347,7 @@ NOTES
   - Console output pauses about once per screen. Press ENTER to continue or Q to stop paging.
   - Use -NoPaging to print continuously. Paging is also disabled when -OutputFile is used.
   - Full help:
-      Get-Help .\CheckServerForExchangeSE.ps1 -Full
+      Get-Help .\ExchangeServerReadinessCheck.ps1 -Full
 "@ | Write-Host
     return
 }
