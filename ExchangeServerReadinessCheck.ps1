@@ -1,14 +1,14 @@
 <#
 .SYNOPSIS
-Checks one or more Windows Servers for Exchange Server Subscription Edition (SE) Mailbox, Management Tools, or Edge Transport readiness.
+Checks supported Windows Server systems for Exchange Server Subscription Edition (SE) Mailbox, Management Tools, or Edge Transport readiness, and supported Windows client systems for Management Tools readiness.
 
 .DESCRIPTION
-ExchangeServerReadinessCheck.ps1 is a read-only readiness script for Exchange Server Subscription Edition (SE) Mailbox, Management Tools, or Edge Transport installation.
+ExchangeServerReadinessCheck.ps1 is a read-only readiness script for Exchange Server Subscription Edition (SE) Mailbox, Management Tools, or Edge Transport installation. Management Tools checks support both supported Windows Server and Windows client operating systems.
 
-It can check the local server, one remote server, or multiple remote servers in the same run. The script reports PASS, BLOCKER, REVIEW, and INFO results and does not change Windows or Exchange configuration.
+It can check the local computer, one remote computer, or multiple remote computers in the same run. The script reports PASS, BLOCKER, REVIEW, and INFO results and does not change Windows or Exchange configuration.
 
 The script checks the main items needed before Exchange SE installation, including:
-- Windows Server version, edition, x64 architecture, and Server Core / Desktop Experience installation mode
+- Supported Windows Server or Windows client operating system, x64 architecture, and applicable installation mode
 - Windows PowerShell 5.1
 - Domain, Active Directory, DNS, forest functional level, and FSMO role holders
 - Current user effective membership in Organization Management, Domain Admins, Enterprise Admins, and Schema Admins
@@ -33,12 +33,12 @@ For IPv6, the script verifies that IPv6 remains bound to active adapters and ide
 Exchange Server SE installation role or component to validate.
 Valid values are Mailbox, ManagementTools, and EdgeTransport.
 If -Role is omitted during fully interactive execution, the script prompts for the role; pressing ENTER selects Mailbox. When operational parameters are supplied, Mailbox is used by default.
-ManagementTools validates the supported Windows Server prerequisite set. Windows client Management Tools installation is outside this script scope.
+ManagementTools validates supported Windows Server and Windows client prerequisite sets. Exchange Server SE Management Tools are supported on Windows Server 2019/2022/2025 and Windows 10/11 64-bit.
 
 .PARAMETER Server
-One or more server names to check. If not specified, the local server is checked.
+One or more computer names to check. If not specified, the local computer is checked.
 Remote checks use Windows PowerShell Remoting / WinRM with the current credentials.
-If one remote server fails, the script reports the failure and continues with the other servers.
+If one remote computer fails, the script reports the failure and continues with the other requested computers.
 
 .PARAMETER OutputFile
 Optional TXT report path.
@@ -67,7 +67,7 @@ Checks the local server for the default Mailbox role.
 
 .EXAMPLE
 .\ExchangeServerReadinessCheck.ps1 -Role ManagementTools
-Checks the local Windows Server for Exchange SE Management Tools prerequisites.
+Checks the local supported Windows Server or Windows client computer for Exchange SE Management Tools prerequisites.
 
 .EXAMPLE
 .\ExchangeServerReadinessCheck.ps1 -Role EdgeTransport
@@ -119,11 +119,18 @@ Author  : Ceyhun Kirmizitas
 Check my GitHub page for updates and other useful tools:
 https://github.com/Ceyhun-Kirmizitas
 
-Version : 1.3
+Version : 1.4
 Date    : 27/09/2026
 Scope   : Exchange Server Subscription Edition role-aware readiness check
 Shell   : Windows PowerShell 5.1
 Mode    : Read-only
+
+
+Exit codes
+----------
+0 - Checks completed and no BLOCKER was found.
+1 - Checks completed and at least one BLOCKER was found.
+2 - The requested run could not be completed because of a connection, data collection, or evaluation error.
 
 License
 -------
@@ -159,6 +166,8 @@ Microsoft references used by this script:
   https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/configure-ipv6-in-windows
 - Exchange Server TLS configuration:
   https://learn.microsoft.com/en-us/exchange/plan-and-deploy/post-installation-tasks/security-best-practices/exchange-tls-configuration
+- Windows Credential Guard overview (includes Exchange Server support note):
+  https://learn.microsoft.com/en-us/windows/security/identity-protection/credential-guard/
 - Running Windows antivirus software on Exchange servers:
   https://learn.microsoft.com/en-us/exchange/antispam-and-antimalware/windows-antivirus-software
 - Microsoft CSS-Exchange SetupLogReviewer:
@@ -166,6 +175,23 @@ Microsoft references used by this script:
 
 Change log
 ----------
+1.4 - 27/09/2026
+- Added Exchange Server SE Management Tools readiness support for Windows 10/11 64-bit client operating systems.
+- Added the Windows client Management Tools feature baseline: IIS-ManagementConsole and IIS-Metabase.
+- Windows Server Management Tools checks continue to use Web-Mgmt-Console and Web-Metabase and require Desktop Experience.
+- Updated Management Tools OS evaluation so supported Windows clients are not incorrectly blocked by Windows Server checks.
+- Updated Management Tools .NET and prerequisite reporting for Windows client systems.
+- Improved Windows client feature collection so IIS-ManagementConsole and IIS-Metabase are queried independently and per-feature query failures are reported without hiding successfully collected feature states.
+- Changed console paging Q behavior so it stops further paged console output but the requested checks, report generation, and exit-code calculation continue.
+- Prevented unreadable SCHANNEL, Credential Guard, and network data from producing false PASS results.
+- Added same-site writable Global Catalog validation for the Exchange server AD site.
+- Added documented process exit codes: 0=no blocker, 1=blocker, 2=incomplete due to connection/collection/evaluation error.
+- Preserved per-server Expected and Note values in grouped console and TXT output when they differ.
+- Changed disabled NIC dynamic DNS registration from Mailbox BLOCKER to REVIEW and added manual-DNS guidance.
+- Updated server FQDN DNS validation to compare returned A/AAAA addresses with active local IPv4/IPv6 addresses.
+- Updated cross-server consistency so unknown peer values cannot be reported as PASS.
+- Fixed ManagementTools exit-code evaluation when no cross-server comparison checks are generated.
+
 1.3 - 27/09/2026
 - Refined BLOCKER semantics to reserve installation blockers for unsupported or clearly setup-breaking conditions.
 - Changed regional configuration checks to REVIEW with environment-aware guidance instead of enforcing an en-US baseline.
@@ -186,7 +212,7 @@ Change log
 - Added explicit Server Core vs Server with Desktop Experience detection.
 - Mailbox Windows Feature validation now uses the matching Microsoft prerequisite feature list for Server Core or Desktop Experience.
 - ManagementTools checks the Windows Server Management Tools prerequisite set: .NET Framework, Visual C++ 2012 x64, Web-Mgmt-Console, and Web-Metabase.
-- ManagementTools on Windows Server requires Server with Desktop Experience. Windows client Management Tools installation is outside this script scope.
+- ManagementTools on Windows Server requires Server with Desktop Experience. Windows client support was added in v1.4.
 - EdgeTransport checks .NET Framework, Visual C++ 2012 x64, and ADLDS without Mailbox-only prerequisites.
 - Mailbox checks Visual C++ 2012 x64, Visual C++ 2013 x64, UCMA 4.0, IIS URL Rewrite, and the Mailbox Windows Feature baseline.
 - Added Server Core-aware UCMA guidance to use the Exchange media UCMARedist package with UCMARunTimeSetup.exe -q.
@@ -218,7 +244,7 @@ Change log
 - Added Microsoft Visual C++ 2015-2022 x64 as an information-only check.
 - Improved remote connection errors. Invoke-Command is used first, and Test-WSMan is used only after a failure for extra diagnostics.
 - Improved performance for collection counts, Windows Feature lookup, and installed application lookup.
-- Added console paging based on the current window size. Press ENTER to continue or Q to stop output. Use -NoPaging to disable it.
+- Added console paging based on the current window size. Press ENTER to continue or Q to stop further paged console output; checks continue. Use -NoPaging to disable it.
 - Added grouped results for multi-server checks and a -Detailed option for server-by-server output.
 - Added a startup banner with author, version, read-only mode, and ENTER confirmation.
 - Fixed Country or region detection by using Get-WinHomeLocation.HomeLocation, with GeoId 244 as a fallback for United States.
@@ -291,7 +317,7 @@ if ($InternalLocal -and [string]::IsNullOrWhiteSpace($Role)) {
 }
 
 $script:SelectedRole = $Role
-$script:ScriptVersion = '1.3'
+$script:ScriptVersion = '1.4'
 
 function Show-HelpText {
     param([Parameter(Mandatory = $true)][string]$Text)
@@ -351,7 +377,7 @@ COMMON USAGE
   Choose the role interactively (ENTER defaults to Mailbox):
     .\ExchangeServerReadinessCheck.ps1
 
-  Check Management Tools prerequisites on Windows Server:
+  Check Management Tools prerequisites on supported Windows Server or Windows client:
     .\ExchangeServerReadinessCheck.ps1 -Role ManagementTools
 
   Check Edge Transport prerequisites:
@@ -406,9 +432,10 @@ NOTES
   - -NonInteractive disables all prompts and console paging for unattended execution.
   - Remote checks use PowerShell Remoting / WinRM.
   - Two or more servers are grouped by check by default. Use -Detailed for server-by-server output.
-  - Console output pauses about once per screen. Press ENTER to continue or Q to stop output.
+  - Console output pauses about once per screen. Press ENTER to continue or Q to stop further paged console output; checks continue.
   - Help uses the same paging behavior. Use -Help -NoPaging to print the full help continuously.
   - Use -NoPaging to print continuously. Paging is also disabled when -OutputFile is used.
+  - Exit codes: 0=no BLOCKER; 1=one or more BLOCKER results; 2=run incomplete because of connection/data/evaluation error.
   - Full help:
       Get-Help .\ExchangeServerReadinessCheck.ps1 -Full
 "@
@@ -501,6 +528,11 @@ $script:ManagementToolsServerFeatures = @(
     'Web-Metabase'
 )
 
+$script:ManagementToolsClientFeatures = @(
+    'IIS-ManagementConsole',
+    'IIS-Metabase'
+)
+
 $script:EdgeTransportFeatures = @(
     'ADLDS'
 )
@@ -549,16 +581,18 @@ function New-CheckResult {
         [Parameter(Mandatory = $true)][ValidateSet('PASS','BLOCKER','REVIEW','INFO')][string]$Status,
         $Current,
         $Expected,
-        [string]$Message = ''
+        [string]$Message = '',
+        [switch]$Incomplete
     )
 
     [PSCustomObject]@{
-        Category = $Category
-        Name     = $Name
-        Status   = $Status
-        Current  = ConvertTo-DisplayText $Current
-        Expected = ConvertTo-DisplayText $Expected
-        Message  = $Message
+        Category   = $Category
+        Name       = $Name
+        Status     = $Status
+        Current    = ConvertTo-DisplayText $Current
+        Expected   = ConvertTo-DisplayText $Expected
+        Message    = $Message
+        Incomplete = [bool]$Incomplete
     }
 }
 
@@ -869,41 +903,136 @@ function Get-ActiveDirectorySiteInfo {
     $gc = $null
     $siteError = $null
     $dcError = $null
+    $gcError = $null
+    $siteQueryStatus = 'NotAttempted'
+    $dcQueryStatus = 'NotAttempted'
+    $gcQueryStatus = 'NotAttempted'
+    $gcSite = $null
+    $gcFlags = @()
 
     try {
         $siteOutput = @(& nltest.exe /dsgetsite 2>&1)
         if ($LASTEXITCODE -eq 0 -and (Get-SafeCount $siteOutput) -gt 0) {
             $site = ([string]$siteOutput[0]).Trim()
+            if (-not [string]::IsNullOrWhiteSpace($site)) {
+                $siteQueryStatus = 'Available'
+            }
+            else {
+                $siteQueryStatus = 'NotFound'
+                $siteError = 'nltest returned no Active Directory site name.'
+            }
         }
-        else { $siteError = ($siteOutput -join ' ').Trim() }
+        else {
+            $siteQueryStatus = 'NotFound'
+            $siteError = ($siteOutput -join ' ').Trim()
+        }
     }
-    catch { $siteError = $_.Exception.Message }
+    catch {
+        $siteQueryStatus = 'Error'
+        $siteError = $_.Exception.Message
+    }
 
     try {
         $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop
         if ($cs.PartOfDomain -and -not [string]::IsNullOrWhiteSpace([string]$cs.Domain)) {
-            $dcOutput = @(& nltest.exe "/dsgetdc:$($cs.Domain)" /WRITABLE 2>&1)
+            $dcOutput = @(& nltest.exe "/dsgetdc:$($cs.Domain)" /WRITABLE /FORCE 2>&1)
+            $gcLocatorDomain = [string]$cs.Domain
             if ($LASTEXITCODE -eq 0) {
-                $dcLine = @($dcOutput | Where-Object { [string]$_ -match '(?i)DC:' } | Select-Object -First 1)
-                if ((Get-SafeCount $dcLine) -gt 0) { $dc = ([string]$dcLine[0] -replace '^\s*DC:\s*','').Trim('\ ') }
+                $dcLine = @($dcOutput | Where-Object { [string]$_ -match '(?i)^\s*DC\s*:' } | Select-Object -First 1)
+                $forestLine = @($dcOutput | Where-Object { [string]$_ -match '(?i)^\s*Forest Name\s*:' } | Select-Object -First 1)
+                if ((Get-SafeCount $forestLine) -gt 0) {
+                    $forestName = ([string]$forestLine[0] -replace '(?i)^\s*Forest Name\s*:\s*','').Trim()
+                    if (-not [string]::IsNullOrWhiteSpace($forestName)) { $gcLocatorDomain = $forestName }
+                }
+                if ((Get-SafeCount $dcLine) -gt 0) {
+                    $dc = ([string]$dcLine[0] -replace '(?i)^\s*DC\s*:\s*','').Trim('\ ')
+                    $dcQueryStatus = 'Available'
+                }
+                else {
+                    $dcQueryStatus = 'NotFound'
+                    $dcError = 'nltest returned no writable domain controller.'
+                }
             }
-            else { $dcError = ($dcOutput -join ' ').Trim() }
+            else {
+                $dcQueryStatus = 'NotFound'
+                $dcError = ($dcOutput -join ' ').Trim()
+            }
 
-            $gcOutput = @(& nltest.exe "/dsgetdc:$($cs.Domain)" /GC /WRITABLE 2>&1)
-            if ($LASTEXITCODE -eq 0) {
-                $gcLine = @($gcOutput | Where-Object { [string]$_ -match '(?i)DC:' } | Select-Object -First 1)
-                if ((Get-SafeCount $gcLine) -gt 0) { $gc = ([string]$gcLine[0] -replace '^\s*DC:\s*','').Trim('\ ') }
+            if ($siteQueryStatus -eq 'Available') {
+                $gcOutput = @(& nltest.exe "/dsgetdc:$gcLocatorDomain" /GC /WRITABLE /FORCE "/SITE:$site" /SITESPEC 2>&1)
+                if ($LASTEXITCODE -eq 0) {
+                    $gcLine = @($gcOutput | Where-Object { [string]$_ -match '(?i)^\s*DC\s*:' } | Select-Object -First 1)
+                    $gcSiteLine = @($gcOutput | Where-Object { [string]$_ -match '(?i)^\s*Dc Site Name\s*:' } | Select-Object -First 1)
+                    $gcFlagsLine = @($gcOutput | Where-Object { [string]$_ -match '(?i)^\s*Flags\s*:' } | Select-Object -First 1)
+
+                    if ((Get-SafeCount $gcLine) -gt 0) {
+                        $gc = ([string]$gcLine[0] -replace '(?i)^\s*DC\s*:\s*','').Trim('\ ')
+                    }
+                    if ((Get-SafeCount $gcSiteLine) -gt 0) {
+                        $gcSite = ([string]$gcSiteLine[0] -replace '(?i)^\s*Dc Site Name\s*:\s*','').Trim()
+                    }
+                    if ((Get-SafeCount $gcFlagsLine) -gt 0) {
+                        $gcFlags = @((([string]$gcFlagsLine[0] -replace '(?i)^\s*Flags\s*:\s*','').Trim() -split '\s+') | Where-Object { $_ })
+                    }
+
+                    $siteMatches = -not [string]::IsNullOrWhiteSpace($gcSite) -and $gcSite -ieq $site
+                    $hasGcFlag = @($gcFlags | Where-Object { $_ -ieq 'GC' }).Count -gt 0
+                    $hasWritableFlag = @($gcFlags | Where-Object { $_ -ieq 'WRITABLE' }).Count -gt 0
+
+                    if (-not [string]::IsNullOrWhiteSpace($gc) -and $siteMatches -and $hasGcFlag -and $hasWritableFlag) {
+                        $gcQueryStatus = 'Available'
+                    }
+                    else {
+                        $gc = $null
+                        $gcQueryStatus = 'NotFound'
+                        $gcError = "A writable Global Catalog in AD site '$site' was not returned with matching GC/WRITABLE flags."
+                    }
+                }
+                else {
+                    # nltest executed, but DC Locator couldn't return a matching same-site writable GC.
+                    # Treat this as the prerequisite not being met rather than as a query exception.
+                    $gcQueryStatus = 'NotFound'
+                    $gcError = ($gcOutput -join ' ').Trim()
+                }
+            }
+            elseif ($siteQueryStatus -eq 'Error') {
+                $gcQueryStatus = 'Error'
+                $gcError = "The same-site writable Global Catalog check could not run because AD site detection failed: $siteError"
+            }
+            else {
+                $gcQueryStatus = 'NotFound'
+                $gcError = 'The same-site writable Global Catalog check could not run because the Exchange server AD site was not resolved.'
             }
         }
+        else {
+            $dcQueryStatus = 'NotApplicable'
+            $gcQueryStatus = 'NotApplicable'
+        }
     }
-    catch { $dcError = $_.Exception.Message }
+    catch {
+        $queryError = $_.Exception.Message
+        if ($dcQueryStatus -eq 'NotAttempted') {
+            $dcQueryStatus = 'Error'
+            $dcError = $queryError
+        }
+        if ($gcQueryStatus -eq 'NotAttempted') {
+            $gcQueryStatus = 'Error'
+            $gcError = $queryError
+        }
+    }
 
     [PSCustomObject]@{
-        Site      = $site
-        DC        = $dc
-        GC        = $gc
-        SiteError = $siteError
-        DCError   = $dcError
+        Site                = $site
+        DC                  = $dc
+        GC                  = $gc
+        GCSite              = $gcSite
+        GCFlags             = $gcFlags
+        SiteError           = $siteError
+        DCError             = $dcError
+        GCError             = $gcError
+        SiteQueryStatus     = $siteQueryStatus
+        DCQueryStatus       = $dcQueryStatus
+        GCQueryStatus       = $gcQueryStatus
     }
 }
 
@@ -937,6 +1066,48 @@ function Invoke-DnsReadinessLookup {
     }
     catch {
         return [PSCustomObject]@{ Name = $Name; Type = $LookupType; Success = $false; Values = @(); Error = $_.Exception.Message }
+    }
+}
+
+function ConvertTo-NormalizedIPAddress {
+    param([AllowNull()][string]$Address)
+
+    if ([string]::IsNullOrWhiteSpace($Address)) { return $null }
+    $text = $Address.Trim()
+    $scopeIndex = $text.IndexOf('%')
+    if ($scopeIndex -gt 0) { $text = $text.Substring(0,$scopeIndex) }
+
+    $parsed = $null
+    if ([System.Net.IPAddress]::TryParse($text, [ref]$parsed)) {
+        return $parsed.ToString().ToLowerInvariant()
+    }
+    return $null
+}
+
+function Compare-DnsHostAddressesToNetwork {
+    param(
+        [Parameter(Mandatory = $true)]$DnsData,
+        [AllowEmptyCollection()][object[]]$Network = @()
+    )
+
+    $localAddresses = @(
+        $Network | ForEach-Object { @($_.IPv4) + @($_.IPv6) } | ForEach-Object {
+            ConvertTo-NormalizedIPAddress -Address ([string]$_)
+        } | Where-Object { $_ } | Select-Object -Unique
+    )
+    $resolvedAddresses = @(
+        @($DnsData.Values) | ForEach-Object {
+            ConvertTo-NormalizedIPAddress -Address ([string]$_)
+        } | Where-Object { $_ } | Select-Object -Unique
+    )
+    $matchingAddresses = @($resolvedAddresses | Where-Object { $localAddresses -contains $_ })
+    $unmatchedAddresses = @($resolvedAddresses | Where-Object { $localAddresses -notcontains $_ })
+
+    [PSCustomObject]@{
+        LocalAddresses      = $localAddresses
+        ResolvedAddresses   = $resolvedAddresses
+        MatchingAddresses   = $matchingAddresses
+        UnmatchedAddresses  = $unmatchedAddresses
     }
 }
 
@@ -1012,28 +1183,37 @@ function Get-SchannelProtocolRoleInfo {
     $path = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\{0}\{1}" -f $Protocol,$Role
     $enabled = $null
     $disabledByDefault = $null
-    $configured = Test-Path -LiteralPath $path
+    $configured = $false
+    $queryStatus = 'NotConfigured'
+    $errorText = ''
 
-    if ($configured) {
-        try {
+    try {
+        $configured = Test-Path -LiteralPath $path -ErrorAction Stop
+        if ($configured) {
             $item = Get-ItemProperty -LiteralPath $path -ErrorAction Stop
             $enabledProperty = $item.PSObject.Properties['Enabled']
             $disabledProperty = $item.PSObject.Properties['DisabledByDefault']
             if ($null -ne $enabledProperty) { $enabled = [int]$enabledProperty.Value }
             if ($null -ne $disabledProperty) { $disabledByDefault = [int]$disabledProperty.Value }
+            $queryStatus = 'Available'
         }
-        catch { }
+    }
+    catch {
+        $queryStatus = 'Error'
+        $errorText = $_.Exception.Message
     }
 
-    $state = 'OS default / not explicitly configured'
-    if ($enabled -eq 0 -or $disabledByDefault -eq 1) {
-        $state = 'Disabled'
-    }
-    elseif ($enabled -eq 1) {
-        $state = 'Enabled'
-    }
-    elseif ($disabledByDefault -eq 0) {
-        $state = 'Not disabled by default'
+    $state = if ($queryStatus -eq 'Error') { '<Unknown>' } else { 'OS default / not explicitly configured' }
+    if ($queryStatus -ne 'Error') {
+        if ($enabled -eq 0 -or $disabledByDefault -eq 1) {
+            $state = 'Disabled'
+        }
+        elseif ($enabled -eq 1) {
+            $state = 'Enabled'
+        }
+        elseif ($disabledByDefault -eq 0) {
+            $state = 'Not disabled by default'
+        }
     }
 
     [PSCustomObject]@{
@@ -1044,6 +1224,8 @@ function Get-SchannelProtocolRoleInfo {
         Enabled           = $enabled
         DisabledByDefault = $disabledByDefault
         State             = $state
+        QueryStatus       = $queryStatus
+        Error             = $errorText
     }
 }
 
@@ -1241,16 +1423,26 @@ function Get-NicPowerManagementInfo {
 
 function Get-NetworkSummary {
     $items = New-Object System.Collections.Generic.List[object]
+    $collectionErrors = New-Object System.Collections.Generic.List[string]
+    $queryStatus = 'Available'
+    $outerError = ''
 
     try {
         # Include active team/vNIC interfaces too. -Physical can hide the interface that actually owns the server IP configuration.
         $adapters = @(Get-NetAdapter -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' })
         foreach ($adapter in $adapters) {
-            $ipConfig = Get-NetIPConfiguration -InterfaceIndex $adapter.ifIndex -ErrorAction SilentlyContinue
-            $ipv4Binding = Get-NetAdapterBinding -Name $adapter.Name -ComponentID ms_tcpip -ErrorAction SilentlyContinue
-            $ipv6Binding = Get-NetAdapterBinding -Name $adapter.Name -ComponentID ms_tcpip6 -ErrorAction SilentlyContinue
-            $ipv4If = Get-NetIPInterface -InterfaceIndex $adapter.ifIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
-            $dnsClient = Get-DnsClient -InterfaceIndex $adapter.ifIndex -ErrorAction SilentlyContinue
+            $adapterErrors = New-Object System.Collections.Generic.List[string]
+            $ipConfig = $null
+            $ipv4Binding = $null
+            $ipv6Binding = $null
+            $ipv4If = $null
+            $dnsClient = $null
+
+            try { $ipConfig = Get-NetIPConfiguration -InterfaceIndex $adapter.ifIndex -ErrorAction Stop } catch { [void]$adapterErrors.Add("IP configuration: $($_.Exception.Message)") }
+            try { $ipv4Binding = Get-NetAdapterBinding -Name $adapter.Name -ComponentID ms_tcpip -ErrorAction Stop } catch { [void]$adapterErrors.Add("IPv4 binding: $($_.Exception.Message)") }
+            try { $ipv6Binding = Get-NetAdapterBinding -Name $adapter.Name -ComponentID ms_tcpip6 -ErrorAction Stop } catch { [void]$adapterErrors.Add("IPv6 binding: $($_.Exception.Message)") }
+            try { $ipv4If = Get-NetIPInterface -InterfaceIndex $adapter.ifIndex -AddressFamily IPv4 -ErrorAction Stop } catch { [void]$adapterErrors.Add("IPv4 interface: $($_.Exception.Message)") }
+            try { $dnsClient = Get-DnsClient -InterfaceIndex $adapter.ifIndex -ErrorAction Stop } catch { [void]$adapterErrors.Add("DNS client: $($_.Exception.Message)") }
 
             $ipv4 = @()
             $ipv6 = @()
@@ -1262,13 +1454,15 @@ function Get-NetworkSummary {
                 $ipv6 = @($ipConfig.IPv6Address | Where-Object { $_.IPAddress -notlike 'fe80:*' } | ForEach-Object { $_.IPAddress })
                 $gateway = @($ipConfig.IPv4DefaultGateway | ForEach-Object { $_.NextHop })
                 if ($ipConfig.DNSServer) { $dnsServers = @($ipConfig.DNSServer.ServerAddresses) }
-                if ($dnsClient) { $dnsSuffix = [string]$dnsClient.ConnectionSpecificSuffix }
             }
+            if ($dnsClient) { $dnsSuffix = [string]$dnsClient.ConnectionSpecificSuffix }
 
             $description = if ($adapter.PSObject.Properties['InterfaceDescription']) { [string]$adapter.InterfaceDescription } else { [string]$adapter.Name }
             $linkSpeed = if ($adapter.PSObject.Properties['LinkSpeed']) { [string]$adapter.LinkSpeed } else { '<Unknown>' }
             $mtu = if ($null -ne $ipv4If -and $ipv4If.PSObject.Properties['NlMtuBytes']) { [int]$ipv4If.NlMtuBytes } else { $null }
             $registeredInDns = if ($null -ne $dnsClient -and $dnsClient.PSObject.Properties['RegisterThisConnectionsAddress']) { [bool]$dnsClient.RegisterThisConnectionsAddress } else { $null }
+            $ipv4Enabled = if ($null -ne $ipv4Binding -and $ipv4Binding.PSObject.Properties['Enabled']) { [bool]$ipv4Binding.Enabled } else { $null }
+            $ipv6Enabled = if ($null -ne $ipv6Binding -and $ipv6Binding.PSObject.Properties['Enabled']) { [bool]$ipv6Binding.Enabled } else { $null }
 
             $rssSupported = $false
             $rssEnabled = $null
@@ -1296,6 +1490,11 @@ function Get-NetworkSummary {
             }
 
             $powerManagement = Get-NicPowerManagementInfo -Adapter $adapter
+            $adapterErrorText = @($adapterErrors.ToArray()) -join ' | '
+            if (-not [string]::IsNullOrWhiteSpace($adapterErrorText)) {
+                $queryStatus = 'Partial'
+                [void]$collectionErrors.Add(("{0}: {1}" -f $adapter.Name,$adapterErrorText))
+            }
 
             [void]$items.Add([PSCustomObject]@{
                 Name                     = [string]$adapter.Name
@@ -1308,8 +1507,8 @@ function Get-NetworkSummary {
                 IPv6                     = $ipv6
                 Gateway                  = $gateway
                 DnsServers               = $dnsServers
-                IPv4Enabled              = [bool]($ipv4Binding -and $ipv4Binding.Enabled)
-                IPv6Enabled              = [bool]($ipv6Binding -and $ipv6Binding.Enabled)
+                IPv4Enabled              = $ipv4Enabled
+                IPv6Enabled              = $ipv6Enabled
                 Dhcp                     = if ($ipv4If) { [string]$ipv4If.Dhcp } else { 'Unknown' }
                 DnsSuffix                = $dnsSuffix
                 RegisteredInDns          = $registeredInDns
@@ -1323,11 +1522,24 @@ function Get-NetworkSummary {
                 PowerManagementSource    = [string]$powerManagement.Source
                 PowerManagementError     = [string]$powerManagement.Error
                 PnPCapabilities          = $powerManagement.PnPCapabilities
+                QueryError               = $adapterErrorText
             })
         }
     }
-    catch { }
-    return $items.ToArray()
+    catch {
+        $queryStatus = 'Error'
+        $outerError = $_.Exception.Message
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($outerError)) {
+        [void]$collectionErrors.Add($outerError)
+    }
+
+    return [PSCustomObject]@{
+        QueryStatus = $queryStatus
+        Error       = (@($collectionErrors.ToArray()) -join ' | ')
+        Items       = $items.ToArray()
+    }
 }
 
 function Get-IPv6PolicyInfo {
@@ -1358,23 +1570,54 @@ function Get-IPv6PolicyInfo {
 
 function Get-CredentialGuardInfo {
     $lsaCfgFlags = $null
+    $registryStatus = 'NotConfigured'
+    $registryError = ''
     try {
-        $lsaCfgFlags = (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name LsaCfgFlags -ErrorAction Stop).LsaCfgFlags
+        $lsa = Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -ErrorAction Stop
+        $lsaProperty = $lsa.PSObject.Properties['LsaCfgFlags']
+        if ($null -ne $lsaProperty) {
+            $lsaCfgFlags = $lsaProperty.Value
+            $registryStatus = 'Available'
+        }
     }
-    catch { }
+    catch {
+        $registryStatus = 'Error'
+        $registryError = $_.Exception.Message
+    }
 
     $running = @()
+    $cimStatus = 'Available'
+    $cimError = ''
     try {
         $deviceGuard = Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\Microsoft\Windows\DeviceGuard -ErrorAction Stop
         $running = @($deviceGuard.SecurityServicesRunning)
     }
-    catch { }
+    catch {
+        $cimStatus = 'Error'
+        $cimError = $_.Exception.Message
+    }
 
-    $enabled = (($null -ne $lsaCfgFlags -and [int]$lsaCfgFlags -ne 0) -or ($running -contains 1))
+    $positiveEvidence = (($null -ne $lsaCfgFlags -and [int]$lsaCfgFlags -ne 0) -or ($running -contains 1))
+    $registryUsable = $registryStatus -in @('Available','NotConfigured')
+    $enabled = $null
+    if ($positiveEvidence) {
+        $enabled = $true
+    }
+    elseif ($registryUsable -and $cimStatus -eq 'Available') {
+        $enabled = $false
+    }
+
+    $queryStatus = if ($registryUsable -and $cimStatus -eq 'Available') { 'Available' } else { 'Partial' }
+    $errors = @(@($registryError,$cimError) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+
     [PSCustomObject]@{
         Enabled                 = $enabled
         LsaCfgFlags             = $lsaCfgFlags
         SecurityServicesRunning = $running
+        RegistryQueryStatus     = $registryStatus
+        CimQueryStatus          = $cimStatus
+        QueryStatus             = $queryStatus
+        Error                   = ($errors -join ' | ')
     }
 }
 
@@ -1422,7 +1665,28 @@ function Get-WindowsInstallationMode {
         return 'Server with Desktop Experience'
     }
 
+    if ($InstallationType -match '(?i)^client$') {
+        return 'Windows Client'
+    }
+
     return 'Unknown'
+}
+
+function Test-IsWindowsClientOperatingSystem {
+    param(
+        [Parameter(Mandatory = $true)]$OperatingSystem,
+        [Parameter(Mandatory = $true)]$RegistryOS
+    )
+
+    $productType = 0
+    try { $productType = [int]$OperatingSystem.ProductType } catch { }
+    $installationType = if ($RegistryOS.PSObject.Properties['InstallationType']) { [string]$RegistryOS.InstallationType } else { '' }
+    $caption = if ($OperatingSystem.PSObject.Properties['Caption']) { [string]$OperatingSystem.Caption } else { '' }
+
+    if ($productType -eq 1) { return $true }
+    if ($installationType -match '(?i)^client$') { return $true }
+    if ($caption -match '(?i)Microsoft Windows (10|11)(\s|$)') { return $true }
+    return $false
 }
 
 function Get-DomainSidValue {
@@ -1588,7 +1852,8 @@ function Get-ServerState {
     $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
     $registryOs = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction Stop
     $pending = Get-PendingRebootInfo
-    $network = @(Get-NetworkSummary)
+    $networkCollection = Get-NetworkSummary
+    $network = @($networkCollection.Items)
     $ipv6Policy = Get-IPv6PolicyInfo
     $dotNet = Get-DotNetFrameworkInfo
     $dotNetTlsSettings = @(Get-DotNetTlsSettings)
@@ -1617,11 +1882,54 @@ function Get-ServerState {
     $dnsReadiness = Get-DnsReadinessInfo -ComputerName ([string]$env:COMPUTERNAME) -PrimaryDnsSuffix $primaryDnsSuffix -DomainName ([string]$cs.Domain) -ForestDnsName ([string]$adFunctionalLevel.ForestDnsName) -WritableDC ([string]$ad.DC) -GlobalCatalog ([string]$ad.GC)
 
     $features = @()
-    try {
-        Import-Module ServerManager -ErrorAction Stop
-        $features = @(Get-WindowsFeature -ErrorAction Stop)
+    $featureQuerySource = $null
+    $featureQueryError = $null
+    $isWindowsClientState = Test-IsWindowsClientOperatingSystem -OperatingSystem $os -RegistryOS $registryOs
+
+    if ($Role -eq 'ManagementTools' -and $isWindowsClientState) {
+        $featureQuerySource = 'Get-WindowsOptionalFeature'
+        $featureErrors = New-Object System.Collections.Generic.List[string]
+
+        foreach ($featureName in $script:ManagementToolsClientFeatures) {
+            try {
+                $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName -ErrorAction Stop
+                $featureState = [string]$feature.State
+                $features += [PSCustomObject]@{
+                    Name        = [string]$feature.FeatureName
+                    Installed   = ($featureState -ieq 'Enabled')
+                    State       = $featureState
+                    QueryStatus = 'Available'
+                    Error       = ''
+                }
+            }
+            catch {
+                $featureError = $_.Exception.Message
+                [void]$featureErrors.Add(("{0}: {1}" -f $featureName,$featureError))
+                $features += [PSCustomObject]@{
+                    Name        = [string]$featureName
+                    Installed   = $null
+                    State       = '<Unknown>'
+                    QueryStatus = 'Unknown'
+                    Error       = $featureError
+                }
+            }
+        }
+
+        if ($featureErrors.Count -gt 0) {
+            $featureQueryError = $featureErrors.ToArray() -join ' | '
+        }
     }
-    catch { }
+    else {
+        $featureQuerySource = 'Get-WindowsFeature'
+        try {
+            Import-Module ServerManager -ErrorAction Stop
+            $features = @(Get-WindowsFeature -ErrorAction Stop)
+        }
+        catch {
+            $featureQueryError = $_.Exception.Message
+            $features = @()
+        }
+    }
 
     $remoteRegistry = $null
     try { $remoteRegistry = Get-CimInstance Win32_Service -Filter "Name='RemoteRegistry'" -ErrorAction Stop } catch { }
@@ -1730,9 +2038,12 @@ function Get-ServerState {
         InstalledApps          = $apps
         InstalledAppCache      = $appCache
         WindowsFeatures        = $features
+        WindowsFeatureQuerySource = $featureQuerySource
+        WindowsFeatureQueryError  = $featureQueryError
         RemoteRegistry         = $remoteRegistry
         PendingReboot          = $pending
         Network                = $network
+        NetworkCollection      = $networkCollection
         NicTeaming             = $nicTeaming
         DnsReadiness           = $dnsReadiness
         IPv6Policy             = $ipv6Policy
@@ -1817,6 +2128,9 @@ function Get-RequiredWindowsFeatures {
 
     switch ($Role) {
         'ManagementTools' {
+            if (Test-IsWindowsClientOperatingSystem -OperatingSystem $State.OperatingSystem -RegistryOS $State.RegistryOS) {
+                return @($script:ManagementToolsClientFeatures)
+            }
             return @($script:ManagementToolsServerFeatures)
         }
         'EdgeTransport' {
@@ -1871,7 +2185,7 @@ function Get-ExchangePreparationChecks {
             "Check failed: {0}" -f $errorMessage
         }
 
-        [void]$results.Add((New-CheckResult -Category 'Check Execution' -Name ("Readiness check failure #{0}" -f $checkFailureNumber) -Status REVIEW -Current $current -Expected 'Check completes successfully' -Message 'This check could not be evaluated. The script continued with the remaining readiness checks.'))
+        [void]$results.Add((New-CheckResult -Category 'Check Execution' -Name ("Readiness check failure #{0}" -f $checkFailureNumber) -Status REVIEW -Current $current -Expected 'Check completes successfully' -Message 'This check could not be evaluated. The script continued with the remaining readiness checks.' -Incomplete))
         continue
     }
 
@@ -1885,13 +2199,17 @@ function Get-ExchangePreparationChecks {
     $isManagementTools = ($Role -eq 'ManagementTools')
     $isEdgeTransport = ($Role -eq 'EdgeTransport')
     $isExchangeServerRole = ($isMailbox -or $isEdgeTransport)
+    $osProductType = [int]$State.OperatingSystem.ProductType
+    $isWindowsClient = Test-IsWindowsClientOperatingSystem -OperatingSystem $State.OperatingSystem -RegistryOS $State.RegistryOS
+    $isWindowsServer = (-not $isWindowsClient) -and ($osProductType -in @(2,3))
+    $windowsClientName = if ($caption -match '(?i)Windows 11') { 'Windows 11' } elseif ($caption -match '(?i)Windows 10') { 'Windows 10' } else { '<Unsupported Windows client>' }
 
     $roleDescription = switch ($Role) {
         'Mailbox' { 'Exchange Server SE Mailbox server role' }
-        'ManagementTools' { 'Exchange Server SE Management Tools (Windows Server scope)' }
+        'ManagementTools' { 'Exchange Server SE Management Tools on supported Windows Server or Windows client' }
         'EdgeTransport' { 'Exchange Server SE Edge Transport server role' }
     }
-    [void]$results.Add((New-CheckResult -Category 'Scope' -Name 'Exchange Role' -Status INFO -Current $Role -Expected $roleDescription -Message $(if ($isManagementTools) { 'This mode validates Management Tools prerequisites on Windows Server. Windows 10/11 Management Tools installations are outside this script scope.' } else { '' })))
+    [void]$results.Add((New-CheckResult -Category 'Scope' -Name 'Exchange Role' -Status INFO -Current $Role -Expected $roleDescription -Message $(if ($isManagementTools) { 'Management Tools readiness supports Windows Server 2019/2022/2025 and Windows 10/11 64-bit. Windows client systems use the IIS-ManagementConsole and IIS-Metabase optional-feature baseline.' } else { '' })))
 
     if ($State.IsAdministrator) {
         [void]$results.Add((New-CheckResult -Category 'Host' -Name 'Administrator' -Status PASS -Current 'Elevated' -Expected 'Run from an elevated Windows PowerShell session'))
@@ -1909,24 +2227,38 @@ function Get-ExchangePreparationChecks {
         [void]$results.Add((New-CheckResult -Category 'Host' -Name 'Windows PowerShell' -Status BLOCKER -Current "$psVersion / $shellEdition" -Expected 'Windows PowerShell 5.1 (Windows-included version)' -Message 'Run the check from Windows PowerShell 5.1. Exchange Server uses the Windows-included Windows PowerShell version.'))
     }
 
-    # Validate the Windows Server release/edition/architecture independently from the
-    # installation type. Server Core vs Desktop Experience is detected separately so
-    # the script can select the matching prerequisite baseline automatically.
-    $supportedOs = ($osYear -in @('2019','2022','2025')) -and ($edition -match '(?i)standard|datacenter') -and ($architecture -match '64')
-    if ($supportedOs) {
-        [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Server' -Status PASS -Current "$caption / $edition / $architecture" -Expected 'Windows Server 2019, 2022, or 2025 Standard/Datacenter x64'))
+    # Mailbox and Edge Transport require supported Windows Server. Management Tools
+    # can also be installed on supported 64-bit Windows client operating systems.
+    $supportedServerOs = $isWindowsServer -and ($osYear -in @('2019','2022','2025')) -and ($edition -match '(?i)standard|datacenter') -and ($architecture -match '64')
+    $supportedClientManagementToolsOs = $isManagementTools -and $isWindowsClient -and ($windowsClientName -in @('Windows 10','Windows 11')) -and ($architecture -match '64')
+
+    if ($isManagementTools -and $isWindowsClient) {
+        if ($supportedClientManagementToolsOs) {
+            [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Client' -Status PASS -Current "$caption / $edition / $architecture" -Expected 'Windows 10 or Windows 11 64-bit for Exchange Server SE Management Tools'))
+        }
+        else {
+            [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Client' -Status BLOCKER -Current "$caption / $edition / $architecture" -Expected 'Windows 10 or Windows 11 64-bit for Exchange Server SE Management Tools' -Message 'Exchange Server SE Management Tools OS supportability check failed.'))
+        }
     }
     else {
-        [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Server' -Status BLOCKER -Current "$caption / $edition / $architecture" -Expected 'Windows Server 2019, 2022, or 2025 Standard/Datacenter x64' -Message 'Exchange Server SE OS supportability check failed.'))
+        if ($supportedServerOs) {
+            [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Server' -Status PASS -Current "$caption / $edition / $architecture" -Expected 'Windows Server 2019, 2022, or 2025 Standard/Datacenter x64'))
+        }
+        else {
+            [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Windows Server' -Status BLOCKER -Current "$caption / $edition / $architecture" -Expected 'Windows Server 2019, 2022, or 2025 Standard/Datacenter x64' -Message 'Exchange Server SE OS supportability check failed.'))
+        }
     }
 
     $installationModeDetected = ($installationMode -in @('Server Core','Server with Desktop Experience'))
-    if ($installationModeDetected) {
+    if ($isManagementTools -and $isWindowsClient) {
+        [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Installation Type' -Status INFO -Current 'Windows Client' -Expected 'Supported Windows client' -Message 'Management Tools on Windows client use the Windows optional-feature prerequisite baseline.'))
+    }
+    elseif ($installationModeDetected) {
         $installModeMessage = if ($isMailbox) {
             ("Script detected {0} and will automatically use the matching Exchange SE Mailbox prerequisite baseline." -f $installationMode)
         }
         elseif ($isManagementTools) {
-            ("Script detected {0}. Management Tools role supportability is validated separately below." -f $installationMode)
+            ("Script detected {0}. Management Tools on Windows Server require Desktop Experience." -f $installationMode)
         }
         else {
             ("Script detected {0} and will automatically use the matching Exchange SE Edge Transport prerequisite logic." -f $installationMode)
@@ -1934,10 +2266,10 @@ function Get-ExchangePreparationChecks {
         [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Installation Type' -Status INFO -Current $installationMode -Expected $null -Message $installModeMessage))
     }
     else {
-        [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Installation Type' -Status REVIEW -Current $(if ([string]::IsNullOrWhiteSpace($installType)) { '<Unknown>' } else { $installType }) -Expected $null -Message 'The Windows Server installation type could not be identified. The script cannot reliably select the matching prerequisite baseline.'))
+        [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Installation Type' -Status REVIEW -Current $(if ([string]::IsNullOrWhiteSpace($installType)) { '<Unknown>' } else { $installType }) -Expected $null -Message 'The Windows installation type could not be identified. The script cannot reliably select the matching prerequisite baseline.'))
     }
 
-    if ($isManagementTools -and $installationMode -ne 'Server with Desktop Experience') {
+    if ($isManagementTools -and -not $isWindowsClient -and $installationMode -ne 'Server with Desktop Experience') {
         [void]$results.Add((New-CheckResult -Category 'Operating System' -Name 'Management Tools Installation Type' -Status BLOCKER -Current $installationMode -Expected 'Server with Desktop Experience' -Message 'Exchange Server SE Management Tools on Windows Server require Server with Desktop Experience.'))
     }
 
@@ -1946,7 +2278,7 @@ function Get-ExchangePreparationChecks {
             [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Domain Membership' -Status PASS -Current $State.ComputerSystem.Domain -Expected 'Domain member'))
         }
         else {
-            $domainMessage = if ($isMailbox) { 'Join the server to the target Active Directory domain before Exchange installation.' } else { 'Exchange Management Tools on Windows Server are intended for computers in the Active Directory domain.' }
+            $domainMessage = if ($isMailbox) { 'Join the server to the target Active Directory domain before Exchange installation.' } else { 'Exchange Management Tools are intended for supported Windows client or server computers in the Active Directory domain.' }
             [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Domain Membership' -Status BLOCKER -Current 'Workgroup' -Expected 'Domain member' -Message $domainMessage))
         }
     }
@@ -1995,17 +2327,27 @@ function Get-ExchangePreparationChecks {
             [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Server Role' -Status PASS -Current 'Member Server' -Expected 'Member Server'))
         }
 
-        if (-not [string]::IsNullOrWhiteSpace([string]$State.AD.Site)) {
-            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'AD Site' -Status PASS -Current $State.AD.Site -Expected 'Resolved AD site'))        }
+        if ($State.AD.SiteQueryStatus -eq 'Available' -and -not [string]::IsNullOrWhiteSpace([string]$State.AD.Site)) {
+            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'AD Site' -Status PASS -Current $State.AD.Site -Expected 'Resolved AD site'))
+        }
+        elseif ($State.AD.SiteQueryStatus -eq 'Error') {
+            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'AD Site' -Status REVIEW -Current $State.AD.SiteError -Expected 'Resolved AD site' -Message 'The AD site query failed, so site readiness could not be verified.' -Incomplete))
+        }
         else {
             [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'AD Site' -Status BLOCKER -Current $State.AD.SiteError -Expected 'Resolved AD site' -Message 'Verify AD subnet/site mapping and domain connectivity.'))
         }
 
-        if ($State.AD.DC -and $State.AD.GC) {
-            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Writable DC / GC' -Status PASS -Current ("DC={0}; GC={1}" -f $State.AD.DC,$State.AD.GC) -Expected 'Writable DC and GC reachable'))
+        if ($State.AD.GCQueryStatus -eq 'Available' -and -not [string]::IsNullOrWhiteSpace([string]$State.AD.GC)) {
+            $gcCurrent = "Site={0}; Writable GC={1}" -f $State.AD.Site,$State.AD.GC
+            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Writable DC / GC' -Status PASS -Current $gcCurrent -Expected 'At least one writable Global Catalog in the Exchange server AD site' -Message 'Exchange Server requires the installation AD site to contain a writable domain controller that is also a Global Catalog.'))
+        }
+        elseif ($State.AD.GCQueryStatus -eq 'Error') {
+            $gcCurrent = "Site={0}; Query error={1}" -f $State.AD.Site,$State.AD.GCError
+            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Writable DC / GC' -Status REVIEW -Current $gcCurrent -Expected 'At least one writable Global Catalog in the Exchange server AD site' -Message 'The same-site writable Global Catalog query failed, so this prerequisite could not be verified.' -Incomplete))
         }
         else {
-            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Writable DC / GC' -Status BLOCKER -Current ("DC={0}; GC={1}; {2}" -f $State.AD.DC,$State.AD.GC,$State.AD.DCError) -Expected 'Writable DC and GC reachable'))
+            $gcCurrent = "Site={0}; Writable DC={1}; Same-site writable GC=<Not found>; {2}" -f $State.AD.Site,$State.AD.DC,$State.AD.GCError
+            [void]$results.Add((New-CheckResult -Category 'Active Directory' -Name 'Writable DC / GC' -Status BLOCKER -Current $gcCurrent -Expected 'At least one writable Global Catalog in the Exchange server AD site' -Message 'Exchange Setup requires at least one writable domain controller that is also a Global Catalog in the same AD site as the Exchange server.'))
         }
     }
 
@@ -2110,13 +2452,37 @@ function Get-ExchangePreparationChecks {
 
     if ($isMailbox) {
         if ($State.ComputerSystem.PartOfDomain) {
+            $fqdnData = $State.DnsReadiness.ServerFqdn
+            if (-not $fqdnData.Success) {
+                $fqdnCurrent = "{0}: {1}" -f $(if ([string]::IsNullOrWhiteSpace([string]$fqdnData.Name)) { '<Not available>' } else { [string]$fqdnData.Name }),$fqdnData.Error
+                [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name 'Server FQDN Resolution' -Status BLOCKER -Current $fqdnCurrent -Expected 'Exchange server FQDN resolves to an active IP address configured on this server' -Message 'Verify the Exchange server host record and client DNS configuration before installation.'))
+            }
+            else {
+                $addressComparison = Compare-DnsHostAddressesToNetwork -DnsData $fqdnData -Network @($State.Network)
+                $networkCollectionStatus = if ($State.PSObject.Properties['NetworkCollection']) { [string]$State.NetworkCollection.QueryStatus } else { 'Available' }
+                $fqdnCurrent = "{0} -> {1}; Local active IPs: {2}" -f $fqdnData.Name,(@($fqdnData.Values) -join ', '),$(if ((Get-SafeCount $addressComparison.LocalAddresses) -gt 0) { @($addressComparison.LocalAddresses) -join ', ' } else { '<Unknown>' })
+
+                if ($networkCollectionStatus -eq 'Error' -or (Get-SafeCount $addressComparison.LocalAddresses) -eq 0) {
+                    $networkError = if ($State.PSObject.Properties['NetworkCollection']) { [string]$State.NetworkCollection.Error } else { 'Active network address data was not returned.' }
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name 'Server FQDN Resolution' -Status REVIEW -Current $fqdnCurrent -Expected 'Exchange server FQDN resolves to an active IP address configured on this server' -Message ("DNS resolved, but local network addresses could not be verified: {0}" -f $networkError) -Incomplete))
+                }
+                elseif ((Get-SafeCount $addressComparison.MatchingAddresses) -eq 0) {
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name 'Server FQDN Resolution' -Status BLOCKER -Current $fqdnCurrent -Expected 'Exchange server FQDN resolves to an active IP address configured on this server' -Message 'The server FQDN resolves, but none of the returned IPv4/IPv6 addresses match an active address configured on this server. Check for stale or incorrect DNS records.'))
+                }
+                elseif ((Get-SafeCount $addressComparison.UnmatchedAddresses) -gt 0) {
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name 'Server FQDN Resolution' -Status REVIEW -Current $fqdnCurrent -Expected 'All returned server-FQDN host addresses should correspond to intended active server addresses' -Message ("At least one address matches, but DNS also returned unmatched address(es): {0}. Review multi-NIC registration and stale records." -f (@($addressComparison.UnmatchedAddresses) -join ', '))))
+                }
+                else {
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name 'Server FQDN Resolution' -Status PASS -Current $fqdnCurrent -Expected 'Exchange server FQDN resolves to an active IP address configured on this server'))
+                }
+            }
+
             $dnsChecks = @(
-                [PSCustomObject]@{ Name='Server FQDN Resolution'; Data=$State.DnsReadiness.ServerFqdn; Expected='Exchange server FQDN resolves in DNS' },
-                [PSCustomObject]@{ Name='DC Locator SRV Records'; Data=$State.DnsReadiness.DcSrv; Expected='_ldap._tcp.dc._msdcs.<domain> SRV records resolve' },
-                [PSCustomObject]@{ Name='Kerberos SRV Records'; Data=$State.DnsReadiness.KerberosSrv; Expected='_kerberos._tcp.<domain> SRV records resolve' },
-                [PSCustomObject]@{ Name='Global Catalog SRV Records'; Data=$State.DnsReadiness.GcSrv; Expected='_ldap._tcp.gc._msdcs.<forest> SRV records resolve' },
-                [PSCustomObject]@{ Name='Writable DC DNS Resolution'; Data=$State.DnsReadiness.WritableDC; Expected='Discovered writable DC resolves in DNS' },
-                [PSCustomObject]@{ Name='Global Catalog DNS Resolution'; Data=$State.DnsReadiness.GlobalCatalog; Expected='Discovered Global Catalog resolves in DNS' }
+                [PSCustomObject]@{ Name='DC Locator SRV Records'; Data=$State.DnsReadiness.DcSrv; Expected='_ldap._tcp.dc._msdcs.<domain> SRV records resolve'; DependencyStatus='' },
+                [PSCustomObject]@{ Name='Kerberos SRV Records'; Data=$State.DnsReadiness.KerberosSrv; Expected='_kerberos._tcp.<domain> SRV records resolve'; DependencyStatus='' },
+                [PSCustomObject]@{ Name='Global Catalog SRV Records'; Data=$State.DnsReadiness.GcSrv; Expected='_ldap._tcp.gc._msdcs.<forest> SRV records resolve'; DependencyStatus='' },
+                [PSCustomObject]@{ Name='Writable DC DNS Resolution'; Data=$State.DnsReadiness.WritableDC; Expected='Discovered writable DC resolves in DNS'; DependencyStatus=[string]$State.AD.DCQueryStatus },
+                [PSCustomObject]@{ Name='Global Catalog DNS Resolution'; Data=$State.DnsReadiness.GlobalCatalog; Expected='Discovered same-site writable Global Catalog resolves in DNS'; DependencyStatus=[string]$State.AD.GCQueryStatus }
             )
 
             foreach ($dnsCheck in $dnsChecks) {
@@ -2127,7 +2493,13 @@ function Get-ExchangePreparationChecks {
                 else {
                     "{0}: {1}" -f $(if ([string]::IsNullOrWhiteSpace([string]$dnsData.Name)) { '<Not available>' } else { [string]$dnsData.Name }),$dnsData.Error
                 }
-                [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name $dnsCheck.Name -Status $(if ($dnsData.Success) { 'PASS' } else { 'BLOCKER' }) -Current $dnsCurrent -Expected $dnsCheck.Expected -Message $(if ($dnsData.Success) { '' } else { 'Verify DNS registration, AD-integrated DNS zones, SRV records, and client DNS configuration before Exchange installation.' })))
+
+                if ($dnsCheck.DependencyStatus -eq 'Error') {
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name $dnsCheck.Name -Status REVIEW -Current $dnsCurrent -Expected $dnsCheck.Expected -Message 'The dependent AD locator query failed, so this DNS check could not be completed reliably.' -Incomplete))
+                }
+                else {
+                    [void]$results.Add((New-CheckResult -Category 'DNS and Active Directory' -Name $dnsCheck.Name -Status $(if ($dnsData.Success) { 'PASS' } else { 'BLOCKER' }) -Current $dnsCurrent -Expected $dnsCheck.Expected -Message $(if ($dnsData.Success) { '' } else { 'Verify DNS registration, AD-integrated DNS zones, SRV records, and client DNS configuration before Exchange installation.' })))
+                }
             }
         }
 
@@ -2153,10 +2525,16 @@ function Get-ExchangePreparationChecks {
     )
 
     $dhcpAdapters = @($State.Network | Where-Object { $_.Dhcp -eq 'Enabled' } | ForEach-Object { $_.Name })
+    $networkCollectionStatus = if ($State.PSObject.Properties['NetworkCollection']) { [string]$State.NetworkCollection.QueryStatus } else { 'Available' }
+    $networkCollectionError = if ($State.PSObject.Properties['NetworkCollection']) { [string]$State.NetworkCollection.Error } else { '' }
     if ((Get-SafeCount $dnsServers) -gt 0) {
         $dnsExpected = if ($isMailbox) { 'Internal AD-capable DNS servers' } elseif ($isEdgeTransport) { 'DNS servers appropriate for the Edge/perimeter design' } else { 'DNS servers that can resolve Active Directory and Exchange names' }
         $dnsMessage = if ($isMailbox) { 'Verify the addresses against the customer AD/DNS design.' } elseif ($isEdgeTransport) { 'Verify DNS resolution against the Edge Transport network design.' } else { 'Verify DNS resolution for the Active Directory domain and Exchange organization.' }
         [void]$results.Add((New-CheckResult -Category 'Network' -Name 'Configured DNS Servers' -Status PASS -Current ($dnsAdapterDetails -join ' | ') -Expected $dnsExpected -Message $dnsMessage))
+    }
+    elseif ($networkCollectionStatus -in @('Error','Partial')) {
+        $dnsExpected = if ($isMailbox) { 'At least one internal AD DNS server' } else { 'At least one DNS server configured on an active adapter' }
+        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'Configured DNS Servers' -Status REVIEW -Current $(if ([string]::IsNullOrWhiteSpace($networkCollectionError)) { '<Unknown>' } else { $networkCollectionError }) -Expected $dnsExpected -Message 'Network/DNS client data could not be collected completely, so DNS server configuration could not be verified.' -Incomplete))
     }
     else {
         $dnsExpected = if ($isMailbox) { 'At least one internal AD DNS server' } else { 'At least one DNS server configured on an active adapter' }
@@ -2217,32 +2595,60 @@ function Get-ExchangePreparationChecks {
         }
 
         $registeredAdapters = @($State.Network | Where-Object { $_.RegisteredInDns -eq $true } | ForEach-Object { $_.Name })
+        $knownDnsRegistration = @($State.Network | Where-Object { $null -ne $_.RegisteredInDns })
         if ((Get-SafeCount $registeredAdapters) -gt 0) {
             [void]$results.Add((New-CheckResult -Category 'Network Adapter' -Name 'NIC DNS Registration' -Status PASS -Current ("Registered: {0}" -f ($registeredAdapters -join ', ')) -Expected 'At least one active server NIC registers its address in DNS, or DNS is managed intentionally'))
         }
+        elseif ((Get-SafeCount $State.Network) -eq 0 -or (Get-SafeCount $knownDnsRegistration) -eq 0) {
+            $dnsRegistrationError = if (-not [string]::IsNullOrWhiteSpace($networkCollectionError)) { $networkCollectionError } else { 'NIC DNS registration state was not returned.' }
+            [void]$results.Add((New-CheckResult -Category 'Network Adapter' -Name 'NIC DNS Registration' -Status REVIEW -Current $dnsRegistrationError -Expected 'Verify dynamic or intentionally manual DNS registration' -Message 'The NIC DNS registration setting could not be verified. Validate the server FQDN host record manually.' -Incomplete))
+        }
         else {
-            $dnsRegistrationStatus = if ($isEdgeTransport) { 'REVIEW' } else { 'BLOCKER' }
-            $dnsRegistrationExpected = if ($isEdgeTransport) { 'Verify that the Edge server FQDN is published/resolvable according to the perimeter DNS design' } else { 'At least one active server NIC registers its address in DNS' }
-            $dnsRegistrationMessage = if ($isEdgeTransport) { 'Dynamic DNS registration is not required when Edge DNS records are managed manually. Verify the server FQDN and perimeter DNS design.' } else { 'Exchange depends on correct server DNS registration. Validate Register this connection''s addresses in DNS before installation.' }
-            [void]$results.Add((New-CheckResult -Category 'Network Adapter' -Name 'NIC DNS Registration' -Status $dnsRegistrationStatus -Current 'No active NIC is configured to register its address in DNS' -Expected $dnsRegistrationExpected -Message $dnsRegistrationMessage))
+            $dnsRegistrationExpected = if ($isEdgeTransport) { 'Verify that the Edge server FQDN is published/resolvable according to the perimeter DNS design' } else { 'Verify that the server FQDN is correctly maintained in DNS' }
+            $dnsRegistrationMessage = 'Dynamic DNS registration is disabled on the active NICs. This can be intentional when host records are managed manually; verify the server FQDN and its A/AAAA records.'
+            [void]$results.Add((New-CheckResult -Category 'Network Adapter' -Name 'NIC DNS Registration' -Status REVIEW -Current 'No active NIC is configured to register its address dynamically in DNS' -Expected $dnsRegistrationExpected -Message $dnsRegistrationMessage))
         }
 
-        if ((Get-SafeCount $dhcpAdapters) -gt 0) {
+        $networkCount = Get-SafeCount @($State.Network)
+        $unknownDhcpAdapters = @($State.Network | Where-Object { [string]$_.Dhcp -eq 'Unknown' } | ForEach-Object { $_.Name })
+        if ($networkCount -eq 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Addressing' -Status REVIEW -Current $(if ([string]::IsNullOrWhiteSpace($networkCollectionError)) { '<No active network adapter data>' } else { $networkCollectionError }) -Expected 'Stable server addressing' -Message 'IPv4 addressing could not be verified because active network data was not returned.' -Incomplete))
+        }
+        elseif ((Get-SafeCount $dhcpAdapters) -gt 0) {
             [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Addressing' -Status REVIEW -Current ("DHCP: {0}" -f ($dhcpAdapters -join ', ')) -Expected 'Stable server addressing' -Message 'Confirm whether DHCP/reservation is intentional for this Exchange server.'))
+        }
+        elseif ((Get-SafeCount $unknownDhcpAdapters) -gt 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Addressing' -Status REVIEW -Current ("Unknown: {0}" -f ($unknownDhcpAdapters -join ', ')) -Expected 'Stable server addressing' -Message 'DHCP state could not be read for one or more active adapters.' -Incomplete))
         }
         else {
             [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Addressing' -Status PASS -Current 'No active adapter reports DHCP' -Expected 'Stable server addressing'))
         }
 
-        $ipv4Enabled = (Get-SafeCount @($State.Network | Where-Object { $_.IPv4Enabled })) -gt 0
-        [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Binding' -Status $(if ($ipv4Enabled) { 'PASS' } else { 'BLOCKER' }) -Current $(if ($ipv4Enabled) { 'Enabled' } else { 'Not detected/enabled' }) -Expected 'Enabled'))
-
-        $ipv6DisabledAdapters = @($State.Network | Where-Object { -not $_.IPv6Enabled } | ForEach-Object { $_.Name })
-        if ((Get-SafeCount $ipv6DisabledAdapters) -eq 0) {
-            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv6 Adapter Binding' -Status PASS -Current 'Enabled on active adapters' -Expected 'Keep IPv6 bound/enabled'))
+        $ipv4EnabledAdapters = @($State.Network | Where-Object { $_.IPv4Enabled -eq $true })
+        $ipv4UnknownAdapters = @($State.Network | Where-Object { $null -eq $_.IPv4Enabled } | ForEach-Object { $_.Name })
+        if ((Get-SafeCount $ipv4EnabledAdapters) -gt 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Binding' -Status PASS -Current 'Enabled' -Expected 'Enabled'))
+        }
+        elseif ($networkCount -eq 0 -or (Get-SafeCount $ipv4UnknownAdapters) -gt 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Binding' -Status REVIEW -Current $(if ($networkCount -eq 0) { '<No active network adapter data>' } else { "Unknown: $($ipv4UnknownAdapters -join ', ')" }) -Expected 'Enabled' -Message 'IPv4 binding state could not be verified.' -Incomplete))
         }
         else {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv4 Binding' -Status BLOCKER -Current 'Disabled on active adapters' -Expected 'Enabled'))
+        }
+
+        $ipv6DisabledAdapters = @($State.Network | Where-Object { $_.IPv6Enabled -eq $false } | ForEach-Object { $_.Name })
+        $ipv6UnknownAdapters = @($State.Network | Where-Object { $null -eq $_.IPv6Enabled } | ForEach-Object { $_.Name })
+        if ($networkCount -eq 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv6 Adapter Binding' -Status REVIEW -Current $(if ([string]::IsNullOrWhiteSpace($networkCollectionError)) { '<No active network adapter data>' } else { $networkCollectionError }) -Expected 'Keep IPv6 bound/enabled' -Message 'IPv6 adapter binding could not be verified because active network data was not returned.' -Incomplete))
+        }
+        elseif ((Get-SafeCount $ipv6DisabledAdapters) -gt 0) {
             [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv6 Adapter Binding' -Status REVIEW -Current ("Disabled: {0}" -f ($ipv6DisabledAdapters -join ', ')) -Expected 'Keep IPv6 bound/enabled' -Message 'IPv6 is unbound from one or more active adapters. Microsoft recommends keeping IPv6 enabled; if IPv4 should be preferred, use DisabledComponents=0x20 instead of unbinding IPv6.'))
+        }
+        elseif ((Get-SafeCount $ipv6UnknownAdapters) -gt 0) {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv6 Adapter Binding' -Status REVIEW -Current ("Unknown: {0}" -f ($ipv6UnknownAdapters -join ', ')) -Expected 'Keep IPv6 bound/enabled' -Message 'IPv6 binding state could not be read for one or more active adapters.' -Incomplete))
+        }
+        else {
+            [void]$results.Add((New-CheckResult -Category 'Network' -Name 'IPv6 Adapter Binding' -Status PASS -Current 'Enabled on active adapters' -Expected 'Keep IPv6 bound/enabled'))
         }
 
         $dcValue = [uint32]$State.IPv6Policy.DisabledComponents
@@ -2395,39 +2801,57 @@ function Get-ExchangePreparationChecks {
 
     $dotNetSupported = $false
     $dotNetRecommended = $false
-    if ($osYear -eq '2019') {
+    $dotNetExpected = 'Supported .NET Framework version'
+    $dotNetRecommendationMessage = ''
+
+    if ($isManagementTools -and $isWindowsClient) {
+        $dotNetSupported = ($State.DotNet.Release -and [int64]$State.DotNet.Release -ge 528040)
+        $dotNetRecommended = ($State.DotNet.Release -and [int64]$State.DotNet.Release -ge 533320)
+        $dotNetExpected = '4.8 or 4.8.1'
+        if ($dotNetSupported -and -not $dotNetRecommended) {
+            $dotNetRecommendationMessage = '.NET Framework 4.8 is present. Use a .NET Framework version supported by the Windows client release; Windows 11 22H2 and later include 4.8.1.'
+        }
+    }
+    elseif ($osYear -eq '2019') {
         $dotNetSupported = ($State.DotNet.Release -and [int64]$State.DotNet.Release -ge 528040 -and [int64]$State.DotNet.Release -lt 533320)
         $dotNetRecommended = $dotNetSupported
+        $dotNetExpected = '4.8'
     }
     elseif ($osYear -in @('2022','2025')) {
         $dotNetSupported = ($State.DotNet.Release -and [int64]$State.DotNet.Release -ge 528040)
         $dotNetRecommended = ($State.DotNet.Release -and [int64]$State.DotNet.Release -ge 533320)
+        $dotNetExpected = '4.8 or 4.8.1 (4.8.1 recommended)'
+        if ($dotNetSupported -and -not $dotNetRecommended) {
+            $dotNetRecommendationMessage = '.NET Framework 4.8 is supported; 4.8.1 is recommended on Windows Server 2022/2025.'
+        }
     }
 
     if ($dotNetSupported) {
-        $message = if ($dotNetRecommended) { '' } else { '.NET Framework 4.8 is supported; 4.8.1 is recommended on Windows Server 2022/2025.' }
-        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name '.NET Framework' -Status PASS -Current $State.DotNet.Version -Expected $(if ($osYear -eq '2019') { '4.8' } else { '4.8 or 4.8.1 (4.8.1 recommended)' }) -Message $message))
+        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name '.NET Framework' -Status PASS -Current $State.DotNet.Version -Expected $dotNetExpected -Message $dotNetRecommendationMessage))
     }
     else {
         $dotNetInstallMessage = 'Install a supported .NET Framework version before Exchange Setup.'
         if ($installationMode -eq 'Server Core' -and $isExchangeServerRole) {
             $dotNetInstallMessage += ' On Windows Server Core, Microsoft requires using the /q option when installing the .NET package; /log [PATH] can be used for logging.'
         }
-        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name '.NET Framework' -Status BLOCKER -Current $State.DotNet.Version -Expected $(if ($osYear -eq '2019') { '4.8' } else { '4.8 or 4.8.1 (4.8.1 recommended)' }) -Message $dotNetInstallMessage))
+        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name '.NET Framework' -Status BLOCKER -Current $State.DotNet.Version -Expected $dotNetExpected -Message $dotNetInstallMessage))
     }
 
     $requiredFeatures = @(Get-RequiredWindowsFeatures -State $State -Role $Role)
-    $featureBaselineName = if ($isMailbox) { "Mailbox / $installationMode" } elseif ($isManagementTools) { 'Management Tools / Windows Server' } else { 'Edge Transport' }
+    $featureBaselineName = if ($isMailbox) { "Mailbox / $installationMode" } elseif ($isManagementTools -and $isWindowsClient) { 'Management Tools / Windows Client' } elseif ($isManagementTools) { 'Management Tools / Windows Server' } else { 'Edge Transport' }
     $featureBaselineAvailable = if ($isMailbox) { $installationModeDetected } else { $true }
 
     if (-not $featureBaselineAvailable) {
         [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status BLOCKER -Current 'No Mailbox Windows Feature baseline could be selected because the Windows installation type is unknown' -Expected 'Detect Server Core or Server with Desktop Experience'))
     }
     elseif ((Get-SafeCount $State.WindowsFeatures) -eq 0) {
-        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status BLOCKER -Current 'Unable to query Get-WindowsFeature' -Expected ("Required Exchange SE Windows Features for {0}" -f $featureBaselineName)))
+        $featureQuerySource = if ($State.PSObject.Properties['WindowsFeatureQuerySource'] -and -not [string]::IsNullOrWhiteSpace([string]$State.WindowsFeatureQuerySource)) { [string]$State.WindowsFeatureQuerySource } else { 'Windows feature query' }
+        $featureQueryError = if ($State.PSObject.Properties['WindowsFeatureQueryError'] -and -not [string]::IsNullOrWhiteSpace([string]$State.WindowsFeatureQueryError)) { [string]$State.WindowsFeatureQueryError } else { 'No feature data was returned.' }
+        [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status REVIEW -Current ("{0} failed: {1}" -f $featureQuerySource,$featureQueryError) -Expected ("Required Exchange SE Windows Features for {0}" -f $featureBaselineName) -Message 'The prerequisite feature state could not be verified.' -Incomplete))
     }
     else {
         $missingFeatures = @()
+        $unknownFeatures = @()
         $featureTable = @{}
         foreach ($installedFeature in @($State.WindowsFeatures)) {
             if ($null -ne $installedFeature -and -not [string]::IsNullOrWhiteSpace([string]$installedFeature.Name)) {
@@ -2436,15 +2860,43 @@ function Get-ExchangePreparationChecks {
         }
 
         foreach ($featureName in $requiredFeatures) {
-            if (-not $featureTable.ContainsKey($featureName) -or -not [bool]$featureTable[$featureName].Installed) {
+            if (-not $featureTable.ContainsKey($featureName)) {
+                if ($isManagementTools -and $isWindowsClient) {
+                    $unknownFeatures += $featureName
+                }
+                else {
+                    $missingFeatures += $featureName
+                }
+                continue
+            }
+
+            $featureItem = $featureTable[$featureName]
+            if ($isManagementTools -and $isWindowsClient) {
+                $queryStatus = if ($featureItem.PSObject.Properties['QueryStatus']) { [string]$featureItem.QueryStatus } else { 'Available' }
+                if ($queryStatus -ne 'Available' -or $null -eq $featureItem.Installed) {
+                    $unknownFeatures += $featureName
+                    continue
+                }
+            }
+
+            if (-not [bool]$featureItem.Installed) {
                 $missingFeatures += $featureName
             }
         }
-        if ((Get-SafeCount $missingFeatures) -eq 0) {
+
+        if ((Get-SafeCount $missingFeatures) -eq 0 -and (Get-SafeCount $unknownFeatures) -eq 0) {
             [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status PASS -Current ("All required Exchange SE Windows Features installed for {0}" -f $featureBaselineName) -Expected ("Complete {0} prerequisite feature set" -f $featureBaselineName)))
         }
         else {
-            [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status BLOCKER -Current ("Mode={0}; Missing: {1}" -f $featureBaselineName,($missingFeatures -join ', ')) -Expected ("All required Exchange SE Windows Features for {0}" -f $featureBaselineName) -Message 'Exchange Setup can install supported Windows components by using the prerequisite option or /InstallWindowsComponents.'))
+            if ((Get-SafeCount $missingFeatures) -gt 0) {
+                [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features' -Status BLOCKER -Current ("Mode={0}; Missing: {1}" -f $featureBaselineName,($missingFeatures -join ', ')) -Expected ("All required Exchange SE Windows Features for {0}" -f $featureBaselineName) -Message $(if ($isManagementTools -and $isWindowsClient) { 'Enable the Windows client prerequisites with: Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementConsole,IIS-Metabase -All' } else { 'Exchange Setup can install supported Windows components by using the prerequisite option or /InstallWindowsComponents.' })))
+            }
+
+            if ((Get-SafeCount $unknownFeatures) -gt 0) {
+                $featureQuerySource = if ($State.PSObject.Properties['WindowsFeatureQuerySource'] -and -not [string]::IsNullOrWhiteSpace([string]$State.WindowsFeatureQuerySource)) { [string]$State.WindowsFeatureQuerySource } else { 'Windows feature query' }
+                $featureQueryError = if ($State.PSObject.Properties['WindowsFeatureQueryError'] -and -not [string]::IsNullOrWhiteSpace([string]$State.WindowsFeatureQueryError)) { [string]$State.WindowsFeatureQueryError } else { 'One or more required feature states could not be read.' }
+                [void]$results.Add((New-CheckResult -Category 'Prerequisites' -Name 'Windows Features - Unverified' -Status REVIEW -Current ("Mode={0}; Could not verify: {1}; {2}: {3}" -f $featureBaselineName,($unknownFeatures -join ', '),$featureQuerySource,$featureQueryError) -Expected ("Verify every required Exchange SE Windows Feature for {0}" -f $featureBaselineName) -Message 'A feature query failure is not treated as either installed or missing. Verify the listed feature states before Exchange Setup.' -Incomplete))
+            }
         }
     }
 
@@ -2500,12 +2952,18 @@ function Get-ExchangePreparationChecks {
 
     $tls12 = @($State.TlsBaseline | Where-Object { $_.Protocol -eq 'TLS 1.2' })
     $tls12Disabled = @($tls12 | Where-Object { $_.State -eq 'Disabled' })
-    $tls12Current = @($tls12 | ForEach-Object { "{0}={1}" -f $_.Role,$_.State }) -join '; '
+    $tls12Errors = @($tls12 | Where-Object { $_.QueryStatus -eq 'Error' })
+    $tls12Current = @($tls12 | ForEach-Object {
+        if ($_.QueryStatus -eq 'Error') { "{0}=<Unknown> ({1})" -f $_.Role,$_.Error } else { "{0}={1}" -f $_.Role,$_.State }
+    }) -join '; '
     if ((Get-SafeCount $tls12Disabled) -gt 0) {
         [void]$results.Add((New-CheckResult -Category 'TLS' -Name 'TLS 1.2' -Status BLOCKER -Current $tls12Current -Expected 'TLS 1.2 not explicitly disabled for SCHANNEL Client/Server' -Message 'TLS 1.2 is explicitly disabled for SCHANNEL Client and/or Server. Review the TLS policy before Exchange installation.'))
     }
+    elseif ((Get-SafeCount $tls12Errors) -gt 0 -or (Get-SafeCount $tls12) -lt 2) {
+        [void]$results.Add((New-CheckResult -Category 'TLS' -Name 'TLS 1.2' -Status REVIEW -Current $tls12Current -Expected 'TLS 1.2 not disabled for SCHANNEL Client/Server' -Message 'One or more TLS 1.2 SCHANNEL registry queries failed, so TLS 1.2 readiness could not be verified.' -Incomplete))
+    }
     else {
-        [void]$results.Add((New-CheckResult -Category 'TLS' -Name 'TLS 1.2' -Status PASS -Current $tls12Current -Expected 'TLS 1.2 not disabled for SCHANNEL Client/Server' -Message $(if ((Get-SafeCount @($tls12 | Where-Object { -not $_.Configured })) -gt 0) { 'One or more TLS 1.2 SCHANNEL keys are not explicitly configured; Windows default SCHANNEL behavior is in use.' } else { '' })))
+        [void]$results.Add((New-CheckResult -Category 'TLS' -Name 'TLS 1.2' -Status PASS -Current $tls12Current -Expected 'TLS 1.2 not disabled for SCHANNEL Client/Server' -Message $(if ((Get-SafeCount @($tls12 | Where-Object { $_.QueryStatus -eq 'NotConfigured' })) -gt 0) { 'One or more TLS 1.2 SCHANNEL keys are not explicitly configured; Windows default SCHANNEL behavior is in use.' } else { '' })))
     }
 
     $dotNetTlsRows = @($State.DotNetTlsSettings)
@@ -2556,11 +3014,15 @@ function Get-ExchangePreparationChecks {
 
         [void]$results.Add((New-CheckResult -Category 'Security / Antimalware' -Name 'Antivirus / EDR Exclusions' -Status INFO -Current 'Manual validation required for non-Microsoft security products' -Expected 'Validate Exchange Server exclusions before installation' -Message 'If third-party antivirus, EDR, application control, or other security software is installed, review and configure the required Exchange Server exclusions before installation.'))
 
-        if ($State.CredentialGuard.Enabled) {
-            [void]$results.Add((New-CheckResult -Category 'Security' -Name 'Credential Guard' -Status BLOCKER -Current ("Enabled (LsaCfgFlags={0}; Running={1})" -f $State.CredentialGuard.LsaCfgFlags,($State.CredentialGuard.SecurityServicesRunning -join ',')) -Expected 'Disabled for Exchange Server' -Message 'Review the organization security/GPO configuration before Exchange installation.'))
+        if ($State.CredentialGuard.Enabled -eq $true) {
+            [void]$results.Add((New-CheckResult -Category 'Security' -Name 'Credential Guard' -Status BLOCKER -Current ("Enabled (LsaCfgFlags={0}; Running={1})" -f $State.CredentialGuard.LsaCfgFlags,($State.CredentialGuard.SecurityServicesRunning -join ',')) -Expected 'Disabled for Exchange Server' -Message 'Credential Guard is not supported on Exchange Server. Review the organization security/GPO configuration before installation.'))
+        }
+        elseif ($State.CredentialGuard.Enabled -eq $false -and $State.CredentialGuard.QueryStatus -eq 'Available') {
+            [void]$results.Add((New-CheckResult -Category 'Security' -Name 'Credential Guard' -Status PASS -Current 'Not detected as enabled' -Expected 'Disabled for Exchange Server'))
         }
         else {
-            [void]$results.Add((New-CheckResult -Category 'Security' -Name 'Credential Guard' -Status PASS -Current 'Not detected as enabled' -Expected 'Disabled for Exchange Server'))
+            $credentialGuardCurrent = if (-not [string]::IsNullOrWhiteSpace([string]$State.CredentialGuard.Error)) { [string]$State.CredentialGuard.Error } else { 'Credential Guard state could not be verified.' }
+            [void]$results.Add((New-CheckResult -Category 'Security' -Name 'Credential Guard' -Status REVIEW -Current $credentialGuardCurrent -Expected 'Disabled for Exchange Server' -Message 'Registry and/or Win32_DeviceGuard data could not be read completely, so this check cannot be reported as PASS.' -Incomplete))
         }
 
         $powerGuid = [string]$State.PowerPlan.Guid
@@ -2677,8 +3139,12 @@ function Get-CrossServerConsistencyChecks {
         }
     )
     foreach ($comparison in $comparisons) {
-        $status = if ((Get-SafeCount $comparison.Unique) -eq 1) { 'PASS' } else { 'REVIEW' }
-        $message = if ($status -eq 'PASS') {
+        $hasUnknown = (Get-SafeCount @($comparison.Unique | Where-Object { [string]$_ -match '<Unknown>' })) -gt 0
+        $status = if (-not $hasUnknown -and (Get-SafeCount $comparison.Unique) -eq 1) { 'PASS' } else { 'REVIEW' }
+        $message = if ($hasUnknown) {
+            'One or more peer-server values are unknown, so consistency cannot be verified.'
+        }
+        elseif ($status -eq 'PASS') {
             'Values are consistent across the checked servers.'
         }
         else {
@@ -2699,6 +3165,7 @@ $script:PagingLineCount = 0
 $script:PagingPageHeight = 0
 $script:PagingWindowWidth = 120
 $script:PagingStopRequested = $false
+$script:PagingStopNoticeShown = $false
 
 function Initialize-ResultPaging {
     $script:PagingEnabled = $false
@@ -2706,6 +3173,7 @@ function Initialize-ResultPaging {
     $script:PagingPageHeight = 0
     $script:PagingWindowWidth = 120
     $script:PagingStopRequested = $false
+    $script:PagingStopNoticeShown = $false
 
     if ($InternalLocal -or $NoPaging -or $NonInteractive -or -not [string]::IsNullOrWhiteSpace($OutputFile)) {
         return
@@ -3077,9 +3545,7 @@ function Show-GroupedServerCheckResults {
         }
     }
 
-    if ((Get-SafeCount $connected) -eq 0) {
-        return
-    }
+    if ((Get-SafeCount $connected) -eq 0) { return }
 
     $orderedChecks = New-Object System.Collections.Generic.List[object]
     $seen = @{}
@@ -3088,47 +3554,57 @@ function Show-GroupedServerCheckResults {
             $key = "{0}`0{1}" -f [string]$check.Category,[string]$check.Name
             if (-not $seen.ContainsKey($key)) {
                 $seen[$key] = $true
-                [void]$orderedChecks.Add([PSCustomObject]@{
-                    Category = [string]$check.Category
-                    Name     = [string]$check.Name
-                })
+                [void]$orderedChecks.Add([PSCustomObject]@{ Category=[string]$check.Category; Name=[string]$check.Name })
             }
         }
     }
 
-    $categories = @($orderedChecks.ToArray() | ForEach-Object { $_.Category } | Select-Object -Unique)
-    foreach ($category in $categories) {
+    foreach ($category in @($orderedChecks.ToArray() | ForEach-Object { $_.Category } | Select-Object -Unique)) {
         Write-ResultHost ''
         Write-ResultHost "[$category]" -ForegroundColor White
 
         foreach ($definition in @($orderedChecks.ToArray() | Where-Object { $_.Category -eq $category })) {
             Write-ResultHost $definition.Name -ForegroundColor Yellow
+            $entries = New-Object System.Collections.Generic.List[object]
 
-            $matchingChecks = New-Object System.Collections.Generic.List[object]
             foreach ($result in $connected) {
-                $match = @($result.Checks | Where-Object {
-                    $_.Category -eq $definition.Category -and $_.Name -eq $definition.Name
-                } | Select-Object -First 1)
-
+                $match = @($result.Checks | Where-Object { $_.Category -eq $definition.Category -and $_.Name -eq $definition.Name } | Select-Object -First 1)
                 if ((Get-SafeCount $match) -gt 0) {
-                    $item = $match[0]
-                    [void]$matchingChecks.Add($item)
-                    $color = Get-StatusColor -Status $item.Status
-                    Write-ResultHost ("  {0,-18} {1,-9} {2}" -f $result.Server,$item.Status,$item.Current) -ForegroundColor $color
+                    [void]$entries.Add([PSCustomObject]@{ Server=$result.Server; Check=$match[0]; Missing=$false })
                 }
                 else {
-                    Write-ResultHost ("  {0,-18} {1,-9} {2}" -f $result.Server,'REVIEW','<Not returned>') -ForegroundColor Cyan
+                    [void]$entries.Add([PSCustomObject]@{ Server=$result.Server; Check=$null; Missing=$true })
                 }
             }
 
-            $expected = @($matchingChecks.ToArray() | ForEach-Object { [string]$_.Expected } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -ne '<Not Set>' } | Select-Object -Unique)
-            if ((Get-SafeCount $expected) -eq 1) {
-                Write-ResultHost ("  Expected           : {0}" -f $expected[0]) -ForegroundColor DarkGray
+            $presentEntries = @($entries.ToArray() | Where-Object { -not $_.Missing })
+            $expectedValues = @($presentEntries | ForEach-Object { [string]$_.Check.Expected } | Select-Object -Unique)
+            $noteValues = @($presentEntries | ForEach-Object { [string]$_.Check.Message } | Select-Object -Unique)
+            $sharedExpected = ((Get-SafeCount $expectedValues) -eq 1)
+            $sharedNote = ((Get-SafeCount $noteValues) -eq 1)
+
+            foreach ($entry in $entries.ToArray()) {
+                if ($entry.Missing) {
+                    Write-ResultHost ("  {0,-18} {1,-9} {2}" -f $entry.Server,'REVIEW','<Not returned>') -ForegroundColor Cyan
+                    continue
+                }
+
+                $item = $entry.Check
+                $color = Get-StatusColor -Status $item.Status
+                Write-ResultHost ("  {0,-18} {1,-9} {2}" -f $entry.Server,$item.Status,$item.Current) -ForegroundColor $color
+                if (-not $sharedExpected -and -not [string]::IsNullOrWhiteSpace([string]$item.Expected) -and [string]$item.Expected -ne '<Not Set>') {
+                    Write-ResultHost ("    Expected: {0}" -f $item.Expected) -ForegroundColor DarkGray
+                }
+                if (-not $sharedNote -and -not [string]::IsNullOrWhiteSpace([string]$item.Message)) {
+                    Write-ResultHost ("    Note    : {0}" -f $item.Message) -ForegroundColor DarkGray
+                }
             }
 
-            $notes = @($matchingChecks.ToArray() | ForEach-Object { [string]$_.Message } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
-            if ((Get-SafeCount $notes) -eq 1) {
-                Write-ResultHost ("  Note               : {0}" -f $notes[0]) -ForegroundColor DarkGray
+            if ($sharedExpected -and (Get-SafeCount $expectedValues) -eq 1 -and $expectedValues[0] -ne '<Not Set>') {
+                Write-ResultHost ("  Expected           : {0}" -f $expectedValues[0]) -ForegroundColor DarkGray
+            }
+            if ($sharedNote -and (Get-SafeCount $noteValues) -eq 1 -and -not [string]::IsNullOrWhiteSpace([string]$noteValues[0])) {
+                Write-ResultHost ("  Note               : {0}" -f $noteValues[0]) -ForegroundColor DarkGray
             }
         }
     }
@@ -3186,10 +3662,7 @@ function Get-GroupedMultiServerReportLines {
                 $key = "{0}`0{1}" -f [string]$check.Category,[string]$check.Name
                 if (-not $seen.ContainsKey($key)) {
                     $seen[$key] = $true
-                    [void]$orderedChecks.Add([PSCustomObject]@{
-                        Category = [string]$check.Category
-                        Name     = [string]$check.Name
-                    })
+                    [void]$orderedChecks.Add([PSCustomObject]@{ Category=[string]$check.Category; Name=[string]$check.Name })
                 }
             }
         }
@@ -3198,25 +3671,46 @@ function Get-GroupedMultiServerReportLines {
             [void]$lines.Add("[$category]")
             foreach ($definition in @($orderedChecks.ToArray() | Where-Object { $_.Category -eq $category })) {
                 [void]$lines.Add($definition.Name)
-                $matchingChecks = New-Object System.Collections.Generic.List[object]
+                $entries = New-Object System.Collections.Generic.List[object]
+
                 foreach ($result in $connected) {
-                    $match = @($result.Checks | Where-Object {
-                        $_.Category -eq $definition.Category -and $_.Name -eq $definition.Name
-                    } | Select-Object -First 1)
+                    $match = @($result.Checks | Where-Object { $_.Category -eq $definition.Category -and $_.Name -eq $definition.Name } | Select-Object -First 1)
                     if ((Get-SafeCount $match) -gt 0) {
-                        $item = $match[0]
-                        [void]$matchingChecks.Add($item)
-                        [void]$lines.Add(("  {0,-18} {1,-9} {2}" -f $result.Server,$item.Status,$item.Current))
+                        [void]$entries.Add([PSCustomObject]@{ Server=$result.Server; Check=$match[0]; Missing=$false })
                     }
                     else {
-                        [void]$lines.Add(("  {0,-18} {1,-9} {2}" -f $result.Server,'REVIEW','<Not returned>'))
+                        [void]$entries.Add([PSCustomObject]@{ Server=$result.Server; Check=$null; Missing=$true })
                     }
                 }
 
-                $expected = @($matchingChecks.ToArray() | ForEach-Object { [string]$_.Expected } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -ne '<Not Set>' } | Select-Object -Unique)
-                if ((Get-SafeCount $expected) -eq 1) { [void]$lines.Add(("  Expected           : {0}" -f $expected[0])) }
-                $notes = @($matchingChecks.ToArray() | ForEach-Object { [string]$_.Message } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
-                if ((Get-SafeCount $notes) -eq 1) { [void]$lines.Add(("  Note               : {0}" -f $notes[0])) }
+                $presentEntries = @($entries.ToArray() | Where-Object { -not $_.Missing })
+                $expectedValues = @($presentEntries | ForEach-Object { [string]$_.Check.Expected } | Select-Object -Unique)
+                $noteValues = @($presentEntries | ForEach-Object { [string]$_.Check.Message } | Select-Object -Unique)
+                $sharedExpected = ((Get-SafeCount $expectedValues) -eq 1)
+                $sharedNote = ((Get-SafeCount $noteValues) -eq 1)
+
+                foreach ($entry in $entries.ToArray()) {
+                    if ($entry.Missing) {
+                        [void]$lines.Add(("  {0,-18} {1,-9} {2}" -f $entry.Server,'REVIEW','<Not returned>'))
+                        continue
+                    }
+
+                    $item = $entry.Check
+                    [void]$lines.Add(("  {0,-18} {1,-9} {2}" -f $entry.Server,$item.Status,$item.Current))
+                    if (-not $sharedExpected -and -not [string]::IsNullOrWhiteSpace([string]$item.Expected) -and [string]$item.Expected -ne '<Not Set>') {
+                        [void]$lines.Add(("    Expected: {0}" -f $item.Expected))
+                    }
+                    if (-not $sharedNote -and -not [string]::IsNullOrWhiteSpace([string]$item.Message)) {
+                        [void]$lines.Add(("    Note    : {0}" -f $item.Message))
+                    }
+                }
+
+                if ($sharedExpected -and (Get-SafeCount $expectedValues) -eq 1 -and $expectedValues[0] -ne '<Not Set>') {
+                    [void]$lines.Add(("  Expected           : {0}" -f $expectedValues[0]))
+                }
+                if ($sharedNote -and (Get-SafeCount $noteValues) -eq 1 -and -not [string]::IsNullOrWhiteSpace([string]$noteValues[0])) {
+                    [void]$lines.Add(("  Note               : {0}" -f $noteValues[0]))
+                }
             }
             [void]$lines.Add('')
         }
@@ -3329,6 +3823,52 @@ function Export-MultiServerReport {
     return $resolvedPath
 }
 
+function Get-ReadinessExitCode {
+    param(
+        [Parameter(Mandatory = $true)][object[]]$Results,
+        [object[]]$ComparisonChecks = @()
+    )
+
+    # Normalize optional comparison output. In Windows PowerShell, an if/else
+    # expression that emits an empty array can collapse to $null when assigned.
+    # Treat that as "no comparison checks" rather than piping $null into a
+    # StrictMode property access.
+    $comparisonList = @(
+        if ($null -ne $ComparisonChecks) {
+            $ComparisonChecks
+        }
+    )
+
+    # 2 has priority: a connection, collection, or evaluation error means the
+    # requested readiness run was not fully completed.
+    foreach ($result in @($Results)) {
+        if ($null -eq $result -or -not $result.PSObject.Properties['ConnectionStatus'] -or -not $result.PSObject.Properties['State']) { return 2 }
+        if ($result.ConnectionStatus -ne 'Connected' -or $null -eq $result.State) { return 2 }
+
+        foreach ($check in @($result.Checks)) {
+            if ($null -eq $check -or -not $check.PSObject.Properties['Status']) { return 2 }
+            if ($check.PSObject.Properties['Incomplete'] -and [bool]$check.Incomplete) { return 2 }
+        }
+    }
+
+    foreach ($check in $comparisonList) {
+        if ($null -eq $check -or -not $check.PSObject.Properties['Status']) { return 2 }
+        if ($check.PSObject.Properties['Incomplete'] -and [bool]$check.Incomplete) { return 2 }
+    }
+
+    foreach ($result in @($Results)) {
+        foreach ($check in @($result.Checks)) {
+            if ([string]$check.Status -eq 'BLOCKER') { return 1 }
+        }
+    }
+
+    foreach ($check in $comparisonList) {
+        if ([string]$check.Status -eq 'BLOCKER') { return 1 }
+    }
+
+    return 0
+}
+
 # Internal remoting entry point. It returns structured data and writes no report/configuration changes.
 if ($InternalLocal) {
     Invoke-LocalServerCheck
@@ -3435,26 +3975,32 @@ try {
             }
         }
         else {
-            Show-ServerCheckResult -Result $result
-            if ($script:PagingStopRequested) {
+            if (-not $script:PagingStopRequested) {
+                Show-ServerCheckResult -Result $result
+            }
+            if ($script:PagingStopRequested -and -not $script:PagingStopNoticeShown) {
                 Write-Host ''
-                Write-Host 'Output stopped by user.' -ForegroundColor DarkGray
-                return
+                Write-Host 'Paged console output stopped by user. Remaining checks will continue.' -ForegroundColor DarkGray
+                $script:PagingStopNoticeShown = $true
             }
         }
     }
 
-    $comparisonChecks = if ($Role -eq 'ManagementTools') { @() } else { @(Get-CrossServerConsistencyChecks -Results ($results.ToArray())) }
+    $comparisonChecks = @(
+        if ($Role -ne 'ManagementTools') {
+            Get-CrossServerConsistencyChecks -Results ($results.ToArray())
+        }
+    )
 
     if ($useGroupedDisplay) {
         Write-Host ''
         Write-Host 'Generating grouped results...' -ForegroundColor DarkGray
         Reset-ResultPaging
         Show-GroupedServerCheckResults -Results ($results.ToArray())
-        if ($script:PagingStopRequested) {
+        if ($script:PagingStopRequested -and -not $script:PagingStopNoticeShown) {
             Write-Host ''
-            Write-Host 'Output stopped by user.' -ForegroundColor DarkGray
-            return
+            Write-Host 'Paged console output stopped by user. Remaining processing will continue.' -ForegroundColor DarkGray
+            $script:PagingStopNoticeShown = $true
         }
     }
 
@@ -3474,6 +4020,9 @@ try {
 
     Write-Host ''
     Write-Host 'Check complete. No server configuration changes were made.' -ForegroundColor Cyan
+
+    $scriptExitCode = Get-ReadinessExitCode -Results ($results.ToArray()) -ComparisonChecks $comparisonChecks
+    exit $scriptExitCode
 }
 catch {
     Write-Host ''
@@ -3489,4 +4038,5 @@ catch {
         Write-Host ("Stack   : {0}" -f $_.ScriptStackTrace) -ForegroundColor DarkRed
     }
     Write-Host 'The script stopped because of an unexpected top-level error. No server configuration changes were made.' -ForegroundColor Red
+    exit 2
 }
