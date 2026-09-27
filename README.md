@@ -20,7 +20,9 @@ Performs the full Exchange server readiness evaluation and automatically selects
 
 ### ManagementTools
 
-Validates the supported **Exchange Management Tools on Windows Server** prerequisite scope. Windows 10/11 Management Tools installations are outside this script's scope.
+Validates the supported **Exchange Server SE Management Tools** prerequisite scope on both supported Windows Server and Windows client systems.
+
+Supported client systems include **Windows 11** and **Windows 10 64-bit**. On Windows clients, the script validates `IIS-ManagementConsole` and `IIS-Metabase`. On Windows Server, it validates `Web-Mgmt-Console` and `Web-Metabase` and requires **Server with Desktop Experience**.
 
 ### EdgeTransport
 
