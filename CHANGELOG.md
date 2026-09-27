@@ -2,6 +2,24 @@
 
 All notable changes to ExchangeServerReadinessCheck.ps1 are documented here.
 
+## 1.4 - 27/09/2026
+
+- Added Exchange Server SE Management Tools readiness support for Windows 10/11 64-bit client operating systems.
+- Added the Windows client Management Tools feature baseline: `IIS-ManagementConsole` and `IIS-Metabase`.
+- Windows Server Management Tools checks continue to use `Web-Mgmt-Console` and `Web-Metabase` and require Desktop Experience.
+- Updated Management Tools OS evaluation so supported Windows clients are not incorrectly blocked by Windows Server checks.
+- Updated Management Tools .NET and prerequisite reporting for Windows client systems.
+- Improved Windows client feature collection so `IIS-ManagementConsole` and `IIS-Metabase` are queried independently and per-feature query failures are reported without hiding successfully collected feature states.
+- Changed console paging Q behavior so it stops further paged console output while requested checks, report generation, and exit-code calculation continue.
+- Prevented unreadable SCHANNEL, Credential Guard, and network data from producing false PASS results.
+- Added same-site writable Global Catalog validation for the Exchange server AD site.
+- Added documented process exit codes: 0=no blocker, 1=blocker, 2=incomplete due to connection/collection/evaluation error.
+- Preserved per-server Expected and Note values in grouped console and TXT output when they differ.
+- Changed disabled NIC dynamic DNS registration from Mailbox BLOCKER to REVIEW and added manual-DNS guidance.
+- Updated server FQDN DNS validation to compare returned A/AAAA addresses with active local IPv4/IPv6 addresses.
+- Updated cross-server consistency so unknown peer values cannot be reported as PASS.
+- Fixed ManagementTools exit-code evaluation when no cross-server comparison checks are generated.
+
 ## 1.3 - 27/09/2026
 
 - Renamed the script to `ExchangeServerReadinessCheck.ps1` to match the broader role-aware readiness scope.
