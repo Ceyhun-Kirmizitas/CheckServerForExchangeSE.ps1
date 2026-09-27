@@ -212,7 +212,7 @@ Change log
 - Improved the built-in help and description with a clearer summary of the readiness checks.
 
 1.1 - 26/09/2026
-- Renamed the script to ExchangeServerReadinessCheck.ps1. The version is now kept inside the script and in Git history/releases.
+- Renamed the script to CheckServerForExchangeSE.ps1. The version is now kept inside the script and in Git history/releases.
 - Improved error handling. If one check fails, it is reported and the remaining checks continue. A critical server data collection failure stops only that server.
 - Removed the final rethrow so unexpected top-level errors are shown as a clear diagnostic message.
 - Added active NIC checks for RSS, link speed, MTU, DNS registration, power saving, and Packets Received Discarded.
